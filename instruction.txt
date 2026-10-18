@@ -1,0 +1,12 @@
+git clone <URL>
+cd <folderName>
+git pull origin main
+
+make change
+
+git add .
+git commit -m "what you change in-short" (make sure it valid)
+
+git push origin main (git clone add remote , don't worry)
+
+follow the instruction otherwise You're "GAY"

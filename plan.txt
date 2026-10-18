@@ -1,0 +1,49 @@
+no plan , direct action
+
+Intelligent-Hiring-Platform/
+
+├── backend/
+│   ├── package.json
+│   └── src/
+│       ├── server.js
+│       ├── seed.js
+│       ├── controllers/
+│       │   ├── applicationsController.js
+│       │   └── jobsController.js
+│       ├── models/
+│       │   ├── Application.js
+│       │   └── Job.js
+│       ├── routes/
+│       │   ├── applications.js
+│       │   └── jobs.js
+│       └── features/
+│           └── improvements/
+│               ├── index.js
+│               ├── routes.js
+│               ├── controller.js
+│               └── models/(delete later)
+│                   ├── ImprovementPlan.js
+│                   └── Sequence.js
+└── frontend/
+    ├── index.html
+    ├── package.json
+    ├── package-lock.json
+    ├── vite.config.js
+    └── src/
+        ├── App.jsx
+        ├── main.jsx
+        ├── styles.css
+        ├── components/
+        │   ├── Header.jsx
+        │   ├── Hero.jsx
+        │   ├── JobModals.jsx
+        │   └── JobSections.jsx
+        ├── features/(delete later)
+        │   └── improvements/
+        │       └── Improvement.jsx
+        ├── pages/
+        │   ├── 404Page.jsx
+        │   ├── AboutUsPage.jsx
+        │   └── ...
+        └── service/
+            └── apiCall.js
