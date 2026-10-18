@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "author": "Bikram",
+  "description": "College project",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
