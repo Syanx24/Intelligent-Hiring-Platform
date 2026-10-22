@@ -1,5 +1,7 @@
+const API_BASE_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
+
 async function requestJson(url, options = {}, fallbackMessage = "Request failed") {
-  const response = await fetch(url, options);
+  const response = await fetch(`${API_BASE_URL}${url}`, options);
   const body = response.headers.get("content-type")?.includes("application/json")
     ? await response.json()
     : null;
