@@ -228,16 +228,3 @@ export function ClosingCta({ onExplore }) {
     </section>
   );
 }
-
-export function Footer() {
-  return (
-    <footer className="footer">
-      <a className="brand footer-brand" href="#home">
-        <span className="brand-mark"><Compass size={18} strokeWidth={2.3} /></span>
-        <span>northstar<span className="brand-period">.</span></span>
-      </a>
-      <p>Good work finds good people. © {new Date().getFullYear()} Northstar.</p>
-      <div><a href="#open-roles">Find a job</a><a href="#companies">For companies</a><a href="#home">Instagram ↗</a></div>
-    </footer>
-  );
-}

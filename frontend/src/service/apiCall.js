@@ -44,6 +44,18 @@ export function submitApplication(application) {
   );
 }
 
+export function authenticate({ mode, name, email, password }) {
+  return requestJson(
+    `/api/auth/${mode}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, password }),
+    },
+    mode === "signup" ? "Could not create account" : "Could not sign in",
+  );
+}
+
 export function getImprovementPlans({ signal } = {}) {
   return requestJson(
     "/api/improvement-plans",

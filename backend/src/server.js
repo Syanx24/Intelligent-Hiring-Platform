@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import applicationsRouter from "./routes/applications.js";
 import improvementPlansRouter from "./features/improvements/index.js";
 import jobsRouter from "./routes/jobs.js";
+import authRouter from "./routes/auth.js";
 
 const app = express();
 const port = Number(process.env.PORT) || 5000;
@@ -20,6 +21,7 @@ app.get("/api/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 app.use("/api/jobs", jobsRouter);
+app.use("/api/auth", authRouter);
 app.use("/api/applications", applicationsRouter);
 app.use("/api/improvement-plans", improvementPlansRouter);
 
