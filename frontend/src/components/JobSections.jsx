@@ -2,13 +2,22 @@ import {
   ArrowDown,
   ArrowRight,
   ArrowUpRight,
-  BriefcaseBusiness,
-  Clock3,
+  Briefcase,
+  CheckCircle2,
+  Clock,
+  Code2,
   Compass,
   Filter,
-  Globe2,
+  Flame,
+  Globe,
+  Layers,
   MapPin,
+  Megaphone,
+  Palette,
   Search,
+  Sparkles,
+  Users,
+  Zap,
 } from "lucide-react";
 
 export const categories = [
@@ -20,116 +29,291 @@ export const categories = [
   "People",
 ];
 
-const categoryDetails = [
-  { name: "Design", icon: "✳", color: "lavender" },
-  { name: "Engineering", icon: "⌘", color: "mint" },
-  { name: "Product", icon: "◒", color: "peach" },
-  { name: "Marketing", icon: "↗", color: "yellow" },
+const categoryCards = [
+  {
+    name: "Engineering",
+    roleCount: "112 open roles",
+    description: "Distributed Systems, Backend Go/Rust, Cloud & AI Infrastructure",
+    icon: Code2,
+    colorClass: "cat-engineering",
+  },
+  {
+    name: "Product",
+    roleCount: "34 open roles",
+    description: "Technical Product Management, Developer Tooling & Core APIs",
+    icon: Layers,
+    colorClass: "cat-product",
+  },
+  {
+    name: "Design",
+    roleCount: "48 open roles",
+    description: "Design Systems, Complex UI/UX, Developer Experience & Motion",
+    icon: Palette,
+    colorClass: "cat-design",
+  },
+  {
+    name: "Marketing",
+    roleCount: "29 open roles",
+    description: "Developer Relations (DevRel), Technical Content & Community",
+    icon: Megaphone,
+    colorClass: "cat-marketing",
+  },
 ];
 
 export function timeAgo(date) {
+  if (!date) return "Recently";
   const days = Math.max(
     0,
     Math.floor((Date.now() - new Date(date).getTime()) / 86400000),
   );
   if (days < 1) return "Today";
-  if (days === 1) return "1 day ago";
-  return `${days} days ago`;
+  if (days === 1) return "1d ago";
+  return `${days}d ago`;
 }
 
 export function CompanyMark({ job }) {
+  const initials =
+    job.companyInitials || (job.company ? job.company.slice(0, 2).toUpperCase() : "CO");
+  const bgColor = job.companyColor || "#e2e8f0";
+
   return (
-    <span
-      className="company-mark"
-      style={{ "--company-color": job.companyColor || "#dff5c4" }}
+    <div
+      className="company-avatar-box"
+      style={{
+        backgroundColor: bgColor,
+        color: "#0f172a",
+      }}
+      aria-hidden="true"
     >
-      {job.companyInitials || job.company.slice(0, 2).toUpperCase()}
-    </span>
+      <span>{initials}</span>
+    </div>
   );
 }
 
 export function JobCard({ job, onClick }) {
+  const isRemote = job.workplace === "Remote";
+
   return (
-    <button className="job-card" onClick={onClick}>
-      <div className="job-card-top">
-        <CompanyMark job={job} />
-        <span className="job-posted"><Clock3 size={12} /> {timeAgo(job.createdAt)}</span>
+    <article
+      className="job-card-elevated"
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+    >
+      {/* Top Header */}
+      <div className="job-card-head">
+        <div className="company-meta-group">
+          <CompanyMark job={job} />
+          <div>
+            <span className="card-company-name">{job.company}</span>
+            <div className="card-location-row">
+              <MapPin size={13} className="text-slate-400" />
+              <span>{job.location}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="card-badge-group">
+          {job.featured && (
+            <span className="featured-pill">
+              <Sparkles size={11} /> Featured
+            </span>
+          )}
+          <span className={`workplace-pill ${isRemote ? "pill-remote" : "pill-hybrid"}`}>
+            {isRemote && <span className="pulse-dot-green" />}
+            {job.workplace}
+          </span>
+        </div>
       </div>
-      <div className="job-card-info">
-        <span className="company-name">{job.company}</span>
-        <h3>{job.title}</h3>
-        <div className="job-location"><MapPin size={14} /> {job.location} <span>·</span> {job.workplace}</div>
+
+      {/* Title & Info */}
+      <div className="job-card-body">
+        <h3 className="job-card-title">{job.title}</h3>
+        {job.description && (
+          <p className="job-card-summary">
+            {job.description.length > 120
+              ? `${job.description.slice(0, 120)}...`
+              : job.description}
+          </p>
+        )}
+
+        {/* Tags */}
+        {job.tags && job.tags.length > 0 && (
+          <div className="card-tags-list">
+            {job.tags.slice(0, 3).map((tag) => (
+              <span key={tag} className="skill-chip">
+                {tag}
+              </span>
+            ))}
+            {job.tags.length > 3 && (
+              <span className="skill-chip skill-more">+{job.tags.length - 3}</span>
+            )}
+          </div>
+        )}
       </div>
-      <div className="job-card-bottom">
-        <span className="salary">{job.salary}</span>
-        <span className="job-type">{job.type}</span>
-        <span className="card-arrow"><ArrowUpRight size={16} /></span>
+
+      {/* Footer Info */}
+      <div className="job-card-foot">
+        <div className="salary-type-group">
+          <span className="card-salary">{job.salary || "Competitive"}</span>
+          <span className="card-type-dot">·</span>
+          <span className="card-job-type">{job.type || "Full-time"}</span>
+        </div>
+
+        <div className="card-action-row">
+          <span className="posted-time">
+            <Clock size={12} /> {timeAgo(job.createdAt)}
+          </span>
+          <div className="card-arrow-circle" aria-label="View job">
+            <ArrowUpRight size={16} />
+          </div>
+        </div>
       </div>
-    </button>
+    </article>
   );
 }
 
 export function TrustRow() {
   return (
-    <section className="trust-row" id="companies">
-      <p>GOOD PEOPLE. GOOD WORK.</p>
-      <div className="trusted-logos" aria-label="Featured companies">
-        <span className="logo-ribbon">ribbon</span>
-        <span className="logo-north">◈ northstar</span>
-        <span className="logo-layer">▱ layer</span>
-        <span className="logo-arc">arc<span>°</span></span>
-        <span className="logo-morrow">morrow</span>
+    <section className="trust-strip" id="companies">
+      <div className="trust-strip-inner">
+        <p className="trust-kicker">
+          TRUSTED BY LEADERS AT INNOVATIVE COMPANIES WORLDWIDE
+        </p>
+        <div className="trust-logos-cloud" aria-label="Trusted tech companies">
+          <span className="brand-logo-item">
+            <strong>LINEAR</strong>
+          </span>
+          <span className="brand-logo-item">
+            <strong>STRIPE</strong>
+          </span>
+          <span className="brand-logo-item">
+            <strong>VERCEL</strong>
+          </span>
+          <span className="brand-logo-item">
+            <strong>FIGMA</strong>
+          </span>
+          <span className="brand-logo-item">
+            <strong>SUPABASE</strong>
+          </span>
+          <span className="brand-logo-item">
+            <strong>RAYCAST</strong>
+          </span>
+        </div>
       </div>
-      <span className="trust-caption">and 2,400+ teams you’ll love</span>
     </section>
   );
 }
 
 export function CategorySection({ onSelectCategory, onExplore }) {
   return (
-    <section className="categories-section section-wrap mx-auto w-[90%] max-w-[1160px]">
-      <div className="section-heading">
-        <div>
-          <span className="section-kicker">A GOOD PLACE TO START</span>
-          <h2>What feels like <span>you?</span></h2>
-        </div>
-        <button className="subtle-link" onClick={onExplore}>Explore every role <ArrowRight size={16} /></button>
-      </div>
-      <div className="category-grid">
-        {categoryDetails.map((category) => (
+    <section className="categories-block" id="categories">
+      <div className="section-container">
+        <div className="section-head-flex">
+          <div>
+            <div className="kicker-pill">
+              <Sparkles size={13} className="text-emerald-600" />
+              <span>EXPLORE BY DISCIPLINE</span>
+            </div>
+            <h2 className="section-title">
+              What kind of work feels like <span>you?</span>
+            </h2>
+            <p className="section-desc">
+              Browse top opportunities clustered around the high-impact skills defining the future of tech.
+            </p>
+          </div>
           <button
-            key={category.name}
-            className="category-card"
-            onClick={() => onSelectCategory(category.name)}
+            type="button"
+            className="secondary-explore-btn"
+            onClick={onExplore}
           >
-            <span className={`category-icon ${category.color}`}>{category.icon}</span>
-            <span className="category-name">{category.name}</span>
-            <span className="category-bottom">
-              <span>Explore open roles</span><ArrowUpRight size={17} />
-            </span>
+            <span>View all disciplines</span>
+            <ArrowRight size={16} />
           </button>
-        ))}
+        </div>
+
+        <div className="category-cards-grid">
+          {categoryCards.map((category) => {
+            const Icon = category.icon;
+            return (
+              <div
+                key={category.name}
+                className={`category-item-card ${category.colorClass}`}
+                onClick={() => onSelectCategory(category.name)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onSelectCategory(category.name);
+                  }
+                }}
+              >
+                <div className="category-top-row">
+                  <div className="category-icon-box">
+                    <Icon size={22} />
+                  </div>
+                  <span className="category-role-count">{category.roleCount}</span>
+                </div>
+
+                <div className="category-info">
+                  <h3 className="category-title">{category.name}</h3>
+                  <p className="category-subtitle">{category.description}</p>
+                </div>
+
+                <div className="category-foot-row">
+                  <span>Explore open roles</span>
+                  <ArrowUpRight size={16} className="category-arrow-icon" />
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </section>
   );
 }
 
 export function FeaturedSection({ jobs, onSelectJob, onExplore }) {
-  if (!jobs.length) return null;
+  if (!jobs || !jobs.length) return null;
 
   return (
-    <section className="featured-section section-wrap mx-auto w-[90%] max-w-[1160px]">
-      <div className="section-heading">
-        <div>
-          <span className="section-kicker">A FEW GOOD ONES</span>
-          <h2>Worth a closer <span>look.</span></h2>
+    <section className="featured-block">
+      <div className="section-container">
+        <div className="section-head-flex">
+          <div>
+            <div className="kicker-pill">
+              <Flame size={13} className="text-amber-500" />
+              <span>STAFF PICKS & HIGH PRIORITY</span>
+            </div>
+            <h2 className="section-title">
+              Opportunities worth a <span>closer look.</span>
+            </h2>
+            <p className="section-desc">
+              Fast-moving hiring teams actively reviewing applications this week.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="secondary-explore-btn"
+            onClick={onExplore}
+          >
+            <span>See all {jobs.length} roles</span>
+            <ArrowRight size={16} />
+          </button>
         </div>
-        <button className="subtle-link" onClick={onExplore}>See all jobs <ArrowRight size={16} /></button>
-      </div>
-      <div className="featured-grid">
-        {jobs.map((job) => (
-          <JobCard key={job._id} job={job} onClick={() => onSelectJob(job)} />
-        ))}
+
+        <div className="featured-cards-grid">
+          {jobs.map((job) => (
+            <JobCard key={job._id} job={job} onClick={() => onSelectJob(job)} />
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -147,68 +331,126 @@ export function JobsSection({
   onShowAll,
 }) {
   return (
-    <section className="jobs-section" id="open-roles">
-      <div className="section-wrap mx-auto w-[90%] max-w-[1160px]">
-        <div className="section-heading jobs-heading">
+    <section className="jobs-directory-section" id="open-roles">
+      <div className="section-container">
+        {/* Section Header */}
+        <div className="section-head-flex">
           <div>
-            <span className="section-kicker">THE GOOD STUFF</span>
-            <h2>Open doors, <span>right now.</span></h2>
-            <p className="section-subtitle">Real roles at good places. Your next step is in here somewhere.</p>
+            <div className="kicker-pill">
+              <Zap size={13} className="text-emerald-600" />
+              <span>LIVE OPPORTUNITIES</span>
+            </div>
+            <h2 className="section-title">
+              Open doors, <span>right now.</span>
+            </h2>
+            <p className="section-desc">
+              Verified roles at transparent companies with direct hiring manager visibility.
+            </p>
           </div>
-          <button className="filter-button" onClick={onClearFilters}>
-            <Filter size={15} /> Clear filters
+
+          <button
+            type="button"
+            className="clear-filter-btn"
+            onClick={onClearFilters}
+          >
+            <Filter size={15} />
+            <span>Reset filters</span>
           </button>
         </div>
-        <div className="job-controls">
-          <div className="category-tabs" role="tablist" aria-label="Filter by job category">
-            {categories.map((category) => (
-              <button
-                key={category}
-                role="tab"
-                aria-selected={activeCategory === category}
-                className={activeCategory === category ? "category-tab active" : "category-tab"}
-                onClick={() => onCategoryChange(category)}
-              >
-                {category}
-              </button>
-            ))}
+
+        {/* Filter Navigation Bar */}
+        <div className="jobs-filter-bar">
+          <div className="category-pills-scroll" role="tablist" aria-label="Job categories">
+            {categories.map((cat) => {
+              const isActive = activeCategory === cat;
+              return (
+                <button
+                  key={cat}
+                  role="tab"
+                  aria-selected={isActive}
+                  className={`category-pill-tab ${isActive ? "tab-active" : ""}`}
+                  onClick={() => onCategoryChange(cat)}
+                >
+                  {cat}
+                </button>
+              );
+            })}
           </div>
-          <span className="job-count">
-            <BriefcaseBusiness size={14} /> {loading ? "Finding roles..." : `${jobs.length} roles`}
-          </span>
+
+          <div className="jobs-count-badge">
+            <Briefcase size={15} />
+            <span>{loading ? "Searching..." : `${jobs.length} roles available`}</span>
+          </div>
         </div>
+
+        {/* Results Container */}
         {error ? (
-          <div className="state-panel error-panel">
-            <span className="state-icon"><Globe2 size={22} /></span>
-            <h3>We couldn’t reach the job board.</h3>
-            <p>{error} Make sure the API is running and MongoDB is connected, then try again.</p>
-            <button className="button button-dark" onClick={onRetry}>Try again</button>
+          <div className="state-card-error">
+            <div className="state-icon-circle state-icon-red">
+              <Globe size={24} />
+            </div>
+            <h3>Unable to connect to job service</h3>
+            <p>{error}</p>
+            <button
+              type="button"
+              className="btn-retry"
+              onClick={onRetry}
+            >
+              Try Again
+            </button>
           </div>
         ) : loading ? (
-          <div className="loading-grid" aria-label="Loading jobs">
-            {[1, 2, 3, 4, 5, 6].map((item) => <div className="job-skeleton" key={item} />)}
+          <div className="skeletons-grid">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="job-card-skeleton">
+                <div className="skeleton-line skeleton-avatar" />
+                <div className="skeleton-line skeleton-title" />
+                <div className="skeleton-line skeleton-desc" />
+                <div className="skeleton-line skeleton-tags" />
+              </div>
+            ))}
           </div>
-        ) : jobs.length ? (
-          <div className="jobs-grid">
+        ) : jobs.length > 0 ? (
+          <div className="jobs-cards-grid">
             {jobs.map((job) => (
-              <JobCard key={job._id} job={job} onClick={() => onSelectJob(job)} />
+              <JobCard
+                key={job._id}
+                job={job}
+                onClick={() => onSelectJob(job)}
+              />
             ))}
           </div>
         ) : (
-          <div className="state-panel">
-            <span className="state-icon"><Search size={21} /></span>
-            <h3>No roles found just yet.</h3>
-            <p>Try a different search or clear a filter. The right fit might be just around the corner.</p>
-            <button className="button button-dark" onClick={onShowAll}>Show all roles</button>
+          <div className="state-card-empty">
+            <div className="state-icon-circle state-icon-neutral">
+              <Search size={24} />
+            </div>
+            <h3>No roles match your criteria</h3>
+            <p>
+              Try expanding your search query, switching workplaces, or resetting the filter tags.
+            </p>
+            <button
+              type="button"
+              className="btn-show-all"
+              onClick={onShowAll}
+            >
+              Show all open roles
+            </button>
           </div>
         )}
-        <div className="jobs-footer">
-          <span>Showing {jobs.length} open roles</span>
+
+        {/* Footer info bar */}
+        <div className="directory-footer-row">
+          <span className="directory-count-text">
+            Displaying {jobs.length} opportunities
+          </span>
           <button
-            className="subtle-link"
+            type="button"
+            className="back-to-top-btn"
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           >
-            Back to top <ArrowDown className="back-top-icon" size={15} />
+            <span>Back to top</span>
+            <ArrowDown size={15} className="rotate-180" />
           </button>
         </div>
       </div>
@@ -218,26 +460,119 @@ export function JobsSection({
 
 export function ClosingCta({ onExplore }) {
   return (
-    <section className="closing-cta section-wrap mx-auto w-[90%] max-w-[1160px]" id="how-it-works">
-      <div className="closing-spark">✳</div>
-      <span className="section-kicker">A BETTER KIND OF SEARCH</span>
-      <h2>There’s a place<br />for <span>your kind of good.</span></h2>
-      <p>Less endless scrolling. More work that feels right. Let’s find your next thing.</p>
-      <button className="button button-lime" onClick={onExplore}>Find your next role <ArrowRight size={16} /></button>
-      <div className="cta-orb orb-left" /><div className="cta-orb orb-right" />
+    <section className="cta-banner-section" id="how-it-works">
+      <div className="cta-banner-inner">
+        {/* Glow ambient effects */}
+        <div className="cta-orb-glow cta-glow-left" aria-hidden="true" />
+        <div className="cta-orb-glow cta-glow-right" aria-hidden="true" />
+
+        <div className="cta-content-box">
+          <div className="cta-sparkle-badge">
+            <Sparkles size={16} />
+            <span>FASTER, EVIDENCE-BACKED TECH HIRING</span>
+          </div>
+
+          <h2 className="cta-heading">
+            Build high-impact teams <span>10x faster.</span>
+          </h2>
+
+          <p className="cta-body">
+            Less resume sifting. Direct GitHub telemetry. Transparent compensation bands. Join fast-moving engineering teams and builders matching through Northstar's technical evaluation engine.
+          </p>
+
+          <div className="cta-actions-group">
+            <button
+              type="button"
+              className="btn-cta-primary"
+              onClick={onExplore}
+            >
+              <span>Explore Verified Roles</span>
+              <ArrowRight size={17} />
+            </button>
+            <a
+              href="#ai-evaluation"
+              className="btn-cta-secondary"
+            >
+              View AI Vetting Engine
+            </a>
+          </div>
+
+          <div className="cta-trust-proof">
+            <span>✓ Verified GitHub & Code Rigor</span>
+            <span>✓ Deep Architecture Extraction</span>
+            <span>✓ Direct Engineering Leadership Pacing</span>
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
 
 export function Footer() {
   return (
-    <footer className="footer">
-      <a className="brand footer-brand" href="#home">
-        <span className="brand-mark"><Compass size={18} strokeWidth={2.3} /></span>
-        <span>northstar<span className="brand-period">.</span></span>
-      </a>
-      <p>Good work finds good people. © {new Date().getFullYear()} Northstar.</p>
-      <div><a href="#open-roles">Find a job</a><a href="#companies">For companies</a><a href="#home">Instagram ↗</a></div>
+    <footer className="site-footer">
+      <div className="site-footer-inner">
+        <div className="footer-top-grid">
+          <div className="footer-brand-column">
+            <a className="footer-brand" href="#home" aria-label="Northstar Home">
+              <span className="brand-icon-box">
+                <Compass size={20} strokeWidth={2.4} />
+              </span>
+              <span className="brand-name">
+                northstar<span className="brand-accent-dot">.</span>
+              </span>
+            </a>
+            <p className="footer-tagline">
+              Connecting exceptional builders, designers, and innovators with high-impact teams shaping tomorrow.
+            </p>
+            <div className="footer-status-pill">
+              <span className="pulse-dot-green" />
+              <span>All Systems Operational</span>
+            </div>
+          </div>
+
+          <div className="footer-links-column">
+            <h4>For Candidates</h4>
+            <ul>
+              <li><a href="#open-roles">Browse All Jobs</a></li>
+              <li><a href="#categories">Search by Discipline</a></li>
+              <li><a href="#open-roles">Remote Opportunities</a></li>
+              <li><a href="#companies">Company Profiles</a></li>
+            </ul>
+          </div>
+
+          <div className="footer-links-column">
+            <h4>For Employers</h4>
+            <ul>
+              <li><a href="#home">Post a Role</a></li>
+              <li><a href="#home">Talent Matching API</a></li>
+              <li><a href="#home">Hiring Benchmarks</a></li>
+              <li><a href="#home">Recruiter Dashboard</a></li>
+            </ul>
+          </div>
+
+          <div className="footer-links-column">
+            <h4>Company</h4>
+            <ul>
+              <li><a href="#home">About Northstar</a></li>
+              <li><a href="#home">Privacy & Terms</a></li>
+              <li><a href="#home">Security</a></li>
+              <li><a href="#home">Contact Support</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="footer-bottom-bar">
+          <p>© {new Date().getFullYear()} Northstar Technologies, Inc. All rights reserved.</p>
+          <div className="footer-bottom-links">
+            <a href="#home">Privacy Policy</a>
+            <span>·</span>
+            <a href="#home">Terms of Service</a>
+            <span>·</span>
+            <a href="#home">Security</a>
+          </div>
+        </div>
+      </div>
     </footer>
   );
 }
