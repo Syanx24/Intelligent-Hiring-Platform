@@ -3,6 +3,7 @@ import cors from "cors";
 import express from "express";
 import mongoose from "mongoose";
 import applicationsRouter from "./routes/applications.js";
+import authRouter from "./routes/auth.js";
 import improvementPlansRouter from "./features/improvements/index.js";
 import jobsRouter from "./routes/jobs.js";
 
@@ -19,6 +20,7 @@ app.use(express.json({ limit: "20kb" }));
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok" });
 });
+app.use("/api/auth", authRouter);
 app.use("/api/jobs", jobsRouter);
 app.use("/api/applications", applicationsRouter);
 app.use("/api/improvement-plans", improvementPlansRouter);
