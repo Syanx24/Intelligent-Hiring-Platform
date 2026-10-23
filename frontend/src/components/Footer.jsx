@@ -17,7 +17,7 @@ function Footer() {
         <a href="/#open-roles">Find a job</a>
         <a href="/#companies">For companies</a>
         <a href="#home">Instagram ↗</a>
-        <a href="#home">About Us</a>
+        <a href="/about-us">About Us</a>
       </div>
     </footer>
   );

@@ -1,7 +1,58 @@
 const API_BASE_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 
+export function getStoredToken() {
+  try {
+    return localStorage.getItem("token") || "";
+  } catch {
+    return "";
+  }
+}
+
+export function setStoredAuth(token, user) {
+  try {
+    if (token) localStorage.setItem("token", token);
+    else localStorage.removeItem("token");
+
+    if (user) localStorage.setItem("user", JSON.stringify(user));
+    else localStorage.removeItem("user");
+  } catch {
+    // Ignore storage issues
+  }
+}
+
+export function clearStoredAuth() {
+  try {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+  } catch {
+    // Ignore storage issues
+  }
+}
+
+export function getStoredUser() {
+  try {
+    const raw = localStorage.getItem("user");
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 async function requestJson(url, options = {}, fallbackMessage = "Request failed") {
-  const response = await fetch(`${API_BASE_URL}${url}`, options);
+  const token = getStoredToken();
+  const headers = {
+    ...options.headers,
+  };
+
+  if (token && !headers.Authorization) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}${url}`, {
+    ...options,
+    headers,
+  });
+
   const body = response.headers.get("content-type")?.includes("application/json")
     ? await response.json()
     : null;
@@ -15,7 +66,81 @@ async function requestJson(url, options = {}, fallbackMessage = "Request failed"
   return body;
 }
 
-export function getJobs(filters, { signal } = {}) {
+/* ==========================================================================
+   AUTHENTICATION APIS
+   ========================================================================== */
+
+export async function registerUser(credentials) {
+  const data = await requestJson(
+    "/api/auth/register",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(credentials),
+    },
+    "Registration failed",
+  );
+  if (data.token) {
+    setStoredAuth(data.token, data.user);
+  }
+  return data;
+}
+
+export async function loginUser(credentials) {
+  const data = await requestJson(
+    "/api/auth/login",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(credentials),
+    },
+    "Login failed",
+  );
+  if (data.token) {
+    setStoredAuth(data.token, data.user);
+  }
+  return data;
+}
+
+export async function getCurrentUser({ signal } = {}) {
+  const token = getStoredToken();
+  if (!token) return null;
+
+  try {
+    const user = await requestJson(
+      "/api/auth/me",
+      { signal },
+      "Session verification failed",
+    );
+    setStoredAuth(token, user);
+    return user;
+  } catch {
+    clearStoredAuth();
+    return null;
+  }
+}
+
+export async function updateUserProfile(profileData) {
+  const data = await requestJson(
+    "/api/auth/profile",
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(profileData),
+    },
+    "Could not update profile",
+  );
+  if (data.user) {
+    setStoredAuth(getStoredToken(), data.user);
+  }
+  return data.user;
+}
+
+/* ==========================================================================
+   PUBLIC & CANDIDATE JOBS & APPLICATIONS
+   ========================================================================== */
+
+export function getJobs(filters = {}, { signal } = {}) {
   const params = new URLSearchParams();
   if (filters.search?.trim()) params.set("search", filters.search.trim());
   if (filters.category && filters.category !== "All roles") {
@@ -44,6 +169,7 @@ export function submitApplication(application) {
   );
 }
 
+<<<<<<< HEAD
 export function authenticate({ mode, name, email, password }) {
   return requestJson(
     `/api/auth/${mode}`,
@@ -56,6 +182,84 @@ export function authenticate({ mode, name, email, password }) {
   );
 }
 
+=======
+export function getMyApplications({ signal } = {}) {
+  return requestJson(
+    "/api/applications/candidate/my-applications",
+    { signal },
+    "Could not load your applications",
+  );
+}
+
+/* ==========================================================================
+   COMPANY SPECIFIC APIS (POST, EDIT, DELETE, APPLICANTS)
+   ========================================================================== */
+
+export function getMyCompanyJobs({ signal } = {}) {
+  return requestJson(
+    "/api/jobs/company/my-jobs",
+    { signal },
+    "Could not load company jobs",
+  );
+}
+
+export function createCompanyJob(jobData) {
+  return requestJson(
+    "/api/jobs",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(jobData),
+    },
+    "Could not create job listing",
+  );
+}
+
+export function updateCompanyJob(id, jobData) {
+  return requestJson(
+    `/api/jobs/${encodeURIComponent(id)}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(jobData),
+    },
+    "Could not update job listing",
+  );
+}
+
+export function deleteCompanyJob(id) {
+  return requestJson(
+    `/api/jobs/${encodeURIComponent(id)}`,
+    { method: "DELETE" },
+    "Could not delete job listing",
+  );
+}
+
+export function getJobApplicants(jobId, { signal } = {}) {
+  return requestJson(
+    `/api/applications/company/job/${encodeURIComponent(jobId)}`,
+    { signal },
+    "Could not load applicants",
+  );
+}
+
+export function updateApplicationStatus(applicationId, status) {
+  return requestJson(
+    `/api/applications/${encodeURIComponent(applicationId)}/status`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    },
+    "Could not update application status",
+  );
+}
+
+/* ==========================================================================
+   ROADMAP IMPROVEMENTS APIS
+   ========================================================================== */
+
+>>>>>>> 6834664409879107c2dc6f9f76c1a2666e990a93
 export function getImprovementPlans({ signal } = {}) {
   return requestJson(
     "/api/improvement-plans",

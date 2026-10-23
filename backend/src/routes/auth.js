@@ -1,3 +1,16 @@
+import express from "express";
+import { getMe, login, register, updateProfile } from "../controllers/authController.js";
+import { authRequired } from "../middleware/auth.js";
+
+const router = express.Router();
+
+router.post("/register", register);
+router.post("/login", login);
+router.get("/me", authRequired, getMe);
+router.put("/profile", authRequired, updateProfile);
+
+export default router;
+
 import { randomBytes, scrypt as scryptCallback, timingSafeEqual, createHmac } from "node:crypto";
 import { promisify } from "node:util";
 import { Router } from "express";
