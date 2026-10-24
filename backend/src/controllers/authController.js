@@ -1,8 +1,7 @@
-import fs from "fs";
-import path from "path";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import Resume from "../models/Resume.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "northstar_intelligent_hiring_secure_jwt_token_secret_key_2026";
 
@@ -203,30 +202,32 @@ export async function uploadResume(req, res, next) {
       });
     }
 
-    // Ensure uploads/resumes directory exists
-    const uploadsDir = path.join(process.cwd(), "uploads", "resumes");
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
-
-    // Generate safe clean filename
     const safeBaseName = (fileName || "resume")
       .replace(/\.pdf$/i, "")
       .replace(/[^a-zA-Z0-9_-]/g, "_")
       .slice(0, 30);
-    const savedFileName = `${user._id}_${Date.now()}_${safeBaseName}.pdf`;
-    const filePath = path.join(uploadsDir, savedFileName);
 
-    await fs.promises.writeFile(filePath, buffer);
+    // Save binary buffer directly into MongoDB cluster
+    const resume = await Resume.findOneAndUpdate(
+      { candidateUser: user._id },
+      {
+        candidateUser: user._id,
+        fileName: fileName || `${safeBaseName}.pdf`,
+        fileSize: buffer.length,
+        contentType: "application/pdf",
+        data: buffer,
+      },
+      { upsert: true, new: true },
+    );
 
-    const fileUrl = `/uploads/resumes/${savedFileName}`;
+    const fileUrl = `/api/resumes/user/${user._id}`;
     user.resumeUrl = fileUrl;
     await user.save();
 
     res.json({
-      message: "CV uploaded successfully.",
+      message: "CV stored in MongoDB cluster successfully.",
       resumeUrl: fileUrl,
-      fileName: fileName || `${safeBaseName}.pdf`,
+      fileName: resume.fileName,
       fileSize: buffer.length,
       user: user.toSafeJSON(),
     });
