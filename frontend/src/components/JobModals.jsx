@@ -1,4 +1,5 @@
-import { ArrowRight, Check, Clock, MapPin, Sparkles, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { AlertCircle, ArrowRight, Check, Clock, Eye, FileText, FileUp, MapPin, Sparkles, X } from "lucide-react";
 import { CompanyMark, timeAgo } from "./JobSections.jsx";
 
 export function JobDetailsModal({ job, onClose, onApply }) {
@@ -104,7 +105,58 @@ export function ApplicationModal({
   onClose,
   onSubmit,
 }) {
+  const [resumeUrl, setResumeUrl] = useState(user?.resumeUrl || "");
+  const [selectedFileName, setSelectedFileName] = useState("");
+  const [selectedFileSize, setSelectedFileSize] = useState(0);
+  const [cvError, setCvError] = useState("");
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    if (user?.resumeUrl) {
+      setResumeUrl(user.resumeUrl);
+    }
+  }, [user]);
+
   if (!job) return null;
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setCvError("");
+
+    // Validate PDF
+    const isPdf =
+      file.type === "application/pdf" ||
+      file.name.toLowerCase().endsWith(".pdf");
+
+    if (!isPdf) {
+      setCvError("Only PDF documents (.pdf) are allowed.");
+      return;
+    }
+
+    // Validate size (max 2MB)
+    const MAX_SIZE = 2 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+      setCvError(`File size exceeds 2MB limit (selected: ${sizeMb} MB). Please choose a smaller PDF.`);
+      return;
+    }
+
+    setUploading(true);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setResumeUrl(reader.result);
+      setSelectedFileName(file.name);
+      setSelectedFileSize(file.size);
+      setUploading(false);
+    };
+    reader.onerror = () => {
+      setCvError("Failed to read the PDF document.");
+      setUploading(false);
+    };
+    reader.readAsDataURL(file);
+  };
 
   return (
     <div
@@ -217,18 +269,78 @@ export function ApplicationModal({
                 />
               </div>
 
+              {/* CV / Resume Upload (PDF max 2MB) */}
               <div className="form-group">
-                <label htmlFor="apply-resume" className="field-label">
-                  Resume / Portfolio URL{" "}
-                  <span className="field-hint">(Google Drive, Dropbox, or ReadCV)</span>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="field-label mb-0">
+                    Curriculum Vitae (CV)
+                  </label>
+                  <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                    PDF ONLY • MAX 2MB
+                  </span>
+                </div>
+
+                {cvError && (
+                  <div className="p-2 mb-2 bg-rose-50 border border-rose-200 rounded-lg text-rose-700 text-xs flex items-center gap-1.5">
+                    <AlertCircle size={13} className="shrink-0" />
+                    <span>{cvError}</span>
+                  </div>
+                )}
+
+                {/* Selected or Attached CV Pill */}
+                {(selectedFileName || resumeUrl) && (
+                  <div className="p-2.5 mb-2 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-7 h-7 rounded-md bg-rose-50 text-rose-600 font-bold text-[11px] flex items-center justify-center shrink-0 border border-rose-100">
+                        PDF
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-xs font-bold text-slate-800 block truncate">
+                          {selectedFileName || (resumeUrl.startsWith("data:") ? "Uploaded_CV.pdf" : resumeUrl.split("/").pop() || "Candidate_CV.pdf")}
+                        </span>
+                        <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-0.5">
+                          <Check size={9} /> Attached to application {selectedFileSize ? `(${(selectedFileSize / (1024 * 1024)).toFixed(2)} MB)` : ""}
+                        </span>
+                      </div>
+                    </div>
+
+                    {resumeUrl && !resumeUrl.startsWith("data:") && (
+                      <a
+                        href={resumeUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-2 py-1 rounded-md shrink-0"
+                      >
+                        Preview
+                      </a>
+                    )}
+                  </div>
+                )}
+
+                {/* File picker button */}
+                <label
+                  htmlFor="cv-modal-input"
+                  className="w-full border border-dashed border-slate-300 hover:border-slate-400 bg-slate-50/60 hover:bg-slate-50 p-2.5 rounded-xl cursor-pointer text-center transition flex items-center justify-center gap-2"
+                >
+                  <FileUp size={15} className="text-slate-500" />
+                  <span className="text-xs font-semibold text-slate-700">
+                    {uploading ? "Reading PDF..." : "Upload CV Document (PDF, max 2MB)"}
+                  </span>
+                  <input
+                    id="cv-modal-input"
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
                 </label>
+
+                {/* Hidden input to submit with the form */}
                 <input
                   id="apply-resume"
                   name="resumeUrl"
-                  type="url"
-                  defaultValue={user?.resumeUrl || ""}
-                  placeholder="https://..."
-                  className="form-input-text"
+                  type="hidden"
+                  value={resumeUrl}
                 />
               </div>
 

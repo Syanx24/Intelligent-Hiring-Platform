@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
@@ -166,3 +168,70 @@ export async function updateProfile(req, res, next) {
     next(error);
   }
 }
+
+export async function uploadResume(req, res, next) {
+  try {
+    const user = req.user;
+    if (user.role !== "candidate") {
+      return res.status(403).json({ message: "Only candidates can upload a CV." });
+    }
+
+    const { fileName, fileData } = req.body ?? {};
+    if (!fileData || typeof fileData !== "string") {
+      return res.status(400).json({ message: "Please provide a valid PDF resume file." });
+    }
+
+    // Validate that it's a PDF data URL or base64
+    const isPdf =
+      fileData.startsWith("data:application/pdf;base64,") ||
+      fileData.startsWith("data:application/octet-stream;base64,") ||
+      (fileName && fileName.toLowerCase().endsWith(".pdf"));
+
+    if (!isPdf) {
+      return res.status(400).json({ message: "Only PDF documents (.pdf) are allowed." });
+    }
+
+    // Extract base64 payload and check binary size (max 2MB = 2,097,152 bytes)
+    const base64Data = fileData.replace(/^data:[^;]+;base64,/, "");
+    const buffer = Buffer.from(base64Data, "base64");
+    const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+
+    if (buffer.length > MAX_SIZE) {
+      const sizeMb = (buffer.length / (1024 * 1024)).toFixed(2);
+      return res.status(400).json({
+        message: `File size exceeds the 2MB limit (selected: ${sizeMb} MB). Please choose a smaller PDF.`,
+      });
+    }
+
+    // Ensure uploads/resumes directory exists
+    const uploadsDir = path.join(process.cwd(), "uploads", "resumes");
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    // Generate safe clean filename
+    const safeBaseName = (fileName || "resume")
+      .replace(/\.pdf$/i, "")
+      .replace(/[^a-zA-Z0-9_-]/g, "_")
+      .slice(0, 30);
+    const savedFileName = `${user._id}_${Date.now()}_${safeBaseName}.pdf`;
+    const filePath = path.join(uploadsDir, savedFileName);
+
+    await fs.promises.writeFile(filePath, buffer);
+
+    const fileUrl = `/uploads/resumes/${savedFileName}`;
+    user.resumeUrl = fileUrl;
+    await user.save();
+
+    res.json({
+      message: "CV uploaded successfully.",
+      resumeUrl: fileUrl,
+      fileName: fileName || `${safeBaseName}.pdf`,
+      fileSize: buffer.length,
+      user: user.toSafeJSON(),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+

@@ -26,6 +26,8 @@ import {
   RefreshCw,
   Search,
   Sparkles,
+  UploadCloud,
+  FileUp,
   User,
   Users,
   X,
@@ -38,6 +40,7 @@ import {
   registerUser,
   submitApplication,
   updateUserProfile,
+  uploadCandidateResume,
 } from "../service/apiCall.js";
 import { timeAgo } from "../components/JobSections.jsx";
 import { ApplicationModal, JobDetailsModal } from "../components/JobModals.jsx";
@@ -254,6 +257,69 @@ export default function CandidatePortalPage({
     setAuthMode("login");
     setAuthEmail("dev.candidate@northstar.internal");
     setAuthPassword("Northstar@2026");
+  };
+
+  // CV / Resume upload state (max 2MB PDF)
+  const [cvUploading, setCvUploading] = useState(false);
+  const [cvError, setCvError] = useState("");
+  const [cvSuccess, setCvSuccess] = useState("");
+  const [dragActive, setDragActive] = useState(false);
+
+  // Handle Candidate CV Upload (PDF only, max 2MB)
+  const handleCvFileUpload = async (file) => {
+    if (!file) return;
+    setCvError("");
+    setCvSuccess("");
+
+    // Validate file format (must be PDF)
+    const isPdf =
+      file.type === "application/pdf" ||
+      file.name.toLowerCase().endsWith(".pdf");
+
+    if (!isPdf) {
+      setCvError("Only PDF documents (.pdf) are allowed. Please select a valid PDF file.");
+      return;
+    }
+
+    // Validate file size (max 2MB = 2,097,152 bytes)
+    const MAX_SIZE = 2 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+      setCvError(`File size exceeds 2MB limit (selected: ${sizeMb} MB). Please choose a PDF under 2.0 MB.`);
+      return;
+    }
+
+    setCvUploading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const fileData = reader.result;
+          const res = await uploadCandidateResume({
+            fileName: file.name,
+            fileData,
+          });
+          setProfileResume(res.resumeUrl);
+          setCvSuccess(`CV "${file.name}" (${(file.size / (1024 * 1024)).toFixed(2)} MB) uploaded successfully!`);
+          if (onUserUpdate && res.user) {
+            onUserUpdate(res.user, "CV uploaded successfully.");
+          }
+          setTimeout(() => setCvSuccess(""), 4500);
+        } catch (uploadErr) {
+          setCvError(uploadErr.message || "Failed to upload CV. Please try again.");
+        } finally {
+          setCvUploading(false);
+        }
+      };
+      reader.onerror = () => {
+        setCvError("Failed to read the PDF document.");
+        setCvUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      setCvError(err.message || "Failed to process the PDF document.");
+      setCvUploading(false);
+    }
   };
 
   // Map of applied job IDs for quick lookup in job listing
@@ -1455,32 +1521,144 @@ export default function CandidatePortalPage({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                    Resume / Document Link
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="https://drive.google.com/... or ReadCV"
-                    value={profileResume}
-                    onChange={(e) => setProfileResume(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-emerald-500 outline-none transition"
-                  />
+              {/* CV / Resume Upload Section (PDF max 2MB) */}
+              <div className="p-4 bg-slate-50/80 border border-slate-200 rounded-2xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-800 uppercase tracking-wider">
+                      Curriculum Vitae (CV / Resume)
+                    </label>
+                    <p className="text-[11px] text-slate-500">
+                      Upload your technical resume for hiring companies to evaluate.
+                    </p>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    PDF ONLY • MAX 2MB
+                  </span>
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                    Years of Engineering Experience
-                  </label>
+                {/* Feedback notices */}
+                {cvError && (
+                  <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-center gap-2">
+                    <AlertCircle size={14} className="shrink-0" />
+                    <span>{cvError}</span>
+                  </div>
+                )}
+                {cvSuccess && (
+                  <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs flex items-center gap-2">
+                    <CheckCircle2 size={14} className="shrink-0" />
+                    <span>{cvSuccess}</span>
+                  </div>
+                )}
+
+                {/* If candidate already has an uploaded CV */}
+                {profileResume && (
+                  <div className="p-3 bg-white border border-slate-200 rounded-xl flex items-center justify-between gap-3 shadow-2xs">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 font-black text-xs flex items-center justify-center shrink-0 border border-rose-100">
+                        PDF
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-xs font-bold text-slate-900 block truncate">
+                          {profileResume.split("/").pop() || "Candidate_Resume.pdf"}
+                        </span>
+                        <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                          <Check size={10} /> Active PDF CV Uploaded
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <a
+                        href={profileResume}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-xs font-bold text-slate-700 hover:text-slate-950 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg transition"
+                      >
+                        <Eye size={12} />
+                        <span>View PDF</span>
+                      </a>
+                    </div>
+                  </div>
+                )}
+
+                {/* Dropzone Upload Box */}
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragActive(true);
+                  }}
+                  onDragLeave={() => setDragActive(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragActive(false);
+                    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                      handleCvFileUpload(e.dataTransfer.files[0]);
+                    }
+                  }}
+                  className={`border-2 border-dashed rounded-xl p-4 text-center transition cursor-pointer ${
+                    dragActive
+                      ? "border-emerald-500 bg-emerald-50/50"
+                      : "border-slate-300 hover:border-slate-400 bg-white"
+                  }`}
+                  onClick={() => document.getElementById("cv-file-input")?.click()}
+                >
                   <input
-                    type="number"
-                    min="0"
-                    max="50"
-                    value={profileExp}
-                    onChange={(e) => setProfileExp(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-emerald-500 outline-none transition"
+                    id="cv-file-input"
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        handleCvFileUpload(e.target.files[0]);
+                      }
+                    }}
                   />
+                  {cvUploading ? (
+                    <div className="py-2 flex items-center justify-center gap-2 text-xs font-semibold text-emerald-700">
+                      <RefreshCw size={14} className="animate-spin" />
+                      <span>Verifying & uploading CV (max 2MB PDF)...</span>
+                    </div>
+                  ) : (
+                    <div className="py-1">
+                      <FileUp size={22} className="mx-auto mb-1.5 text-slate-400" />
+                      <p className="text-xs font-bold text-slate-800">
+                        {profileResume ? "Click or drag to replace your PDF CV" : "Click to upload or drag & drop your CV"}
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        PDF format only • Maximum file size 2MB
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Optional External Document Link & Experience */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                      Or external document URL (optional)
+                    </label>
+                    <input
+                      type="url"
+                      placeholder="https://drive.google.com/... or ReadCV"
+                      value={profileResume.startsWith("http") ? profileResume : ""}
+                      onChange={(e) => setProfileResume(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:border-emerald-500 outline-none transition"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                      Years of Engineering Experience
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="50"
+                      value={profileExp}
+                      onChange={(e) => setProfileExp(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:border-emerald-500 outline-none transition"
+                    />
+                  </div>
                 </div>
               </div>
 

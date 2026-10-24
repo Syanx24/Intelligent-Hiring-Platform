@@ -8,6 +8,7 @@ import {
   Clock,
   Edit2,
   ExternalLink,
+  FileText,
   Github,
   Globe,
   MapPin,
@@ -426,10 +427,10 @@ export function JobApplicantsModal({
                           target="_blank"
                           rel="noreferrer"
                           className="btn-applicant-link"
-                          title="Open Resume / Portfolio"
+                          title="Open Candidate CV / Resume"
                         >
-                          <Globe size={14} />
-                          <span>Resume Link</span>
+                          <FileText size={14} className="text-rose-500" />
+                          <span>View CV (PDF)</span>
                           <ExternalLink size={12} />
                         </a>
                       )}
