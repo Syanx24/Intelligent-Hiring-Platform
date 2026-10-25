@@ -14,6 +14,9 @@ import {
 
 export default function Header({
   user,
+  currentPage = "home",
+  onNavigateCandidatePortal,
+  onNavigateHome,
   onExplore,
   onOpenAuth,
   onOpenProfile,
@@ -29,7 +32,17 @@ export default function Header({
   return (
     <header className="topbar-header">
       <div className="topbar-inner">
-        <a className="brand-logo" href="#home" aria-label="Northstar Home">
+        <a
+          className="brand-logo"
+          href="#home"
+          onClick={(e) => {
+            if (onNavigateHome) {
+              e.preventDefault();
+              onNavigateHome();
+            }
+          }}
+          aria-label="Northstar Home"
+        >
           <span className="brand-icon-box">
             <Compass size={22} strokeWidth={2.4} />
           </span>
@@ -41,10 +54,37 @@ export default function Header({
 
         {/* Desktop Navigation */}
         <nav className="desktop-nav" aria-label="Main navigation">
-          <a href="#ai-evaluation" className="nav-item">AI Vetting Engine</a>
-          <a href="#open-roles" className="nav-item">Explore Roles</a>
-          <a href="#categories" className="nav-item">Tech Stacks</a>
-          <a href="#companies" className="nav-item">Top Teams</a>
+          {currentPage === "candidate-portal" ? (
+            <>
+              <button
+                type="button"
+                onClick={onNavigateHome}
+                className="nav-item bg-transparent border-none cursor-pointer"
+              >
+                ← Back to Public Site
+              </button>
+              <button
+                type="button"
+                onClick={onNavigateCandidatePortal}
+                className="nav-item bg-transparent border-none cursor-pointer text-emerald-600 font-bold"
+              >
+                Candidate Dashboard
+              </button>
+            </>
+          ) : (
+            <>
+              <a href="#ai-evaluation" className="nav-item">AI Vetting Engine</a>
+              <a href="#open-roles" className="nav-item">Explore Roles</a>
+              <a href="#categories" className="nav-item">Tech Stacks</a>
+              <button
+                type="button"
+                onClick={onNavigateCandidatePortal}
+                className="nav-item bg-transparent border-none cursor-pointer text-emerald-600 font-bold"
+              >
+                Candidate Portal
+              </button>
+            </>
+          )}
         </nav>
 
         {/* Actions based on Authentication State */}
@@ -53,11 +93,13 @@ export default function Header({
             <>
               <button
                 type="button"
-                className="btn-auth-nav"
-                onClick={() => onOpenAuth("candidate", "login")}
+                className={`btn-auth-nav ${
+                  currentPage === "candidate-portal" ? "border-emerald-500 text-emerald-700 bg-emerald-50" : ""
+                }`}
+                onClick={onNavigateCandidatePortal}
               >
                 <User size={15} />
-                <span>Candidate Sign In</span>
+                <span>Candidate Portal</span>
               </button>
 
               <button
@@ -72,7 +114,14 @@ export default function Header({
               <button
                 type="button"
                 className="btn-primary-explore"
-                onClick={onExplore}
+                onClick={() => {
+                  if (currentPage === "candidate-portal" && onNavigateHome) {
+                    onNavigateHome();
+                    setTimeout(onExplore, 100);
+                  } else {
+                    onExplore();
+                  }
+                }}
               >
                 <span>Browse Jobs</span>
                 <ArrowUpRight size={16} />
@@ -82,7 +131,20 @@ export default function Header({
             <>
               <button
                 type="button"
-                className="btn-auth-nav"
+                className={`btn-auth-nav ${
+                  currentPage === "candidate-portal"
+                    ? "border-emerald-500 text-emerald-700 bg-emerald-50 font-bold"
+                    : ""
+                }`}
+                onClick={onNavigateCandidatePortal}
+              >
+                <Briefcase size={15} />
+                <span>Candidate Dashboard</span>
+              </button>
+
+              <button
+                type="button"
+                className="btn-auth-nav hidden sm:inline-flex"
                 onClick={onOpenApplications}
               >
                 <FileText size={15} />
@@ -92,8 +154,11 @@ export default function Header({
               <button
                 type="button"
                 className="user-profile-badge-btn"
-                onClick={onOpenProfile}
-                title="Edit your candidate profile"
+                onClick={() => {
+                  if (onNavigateCandidatePortal) onNavigateCandidatePortal();
+                  else onOpenProfile();
+                }}
+                title="View your candidate dashboard & profile"
               >
                 <div className="user-badge-avatar">
                   {user.name ? user.name.slice(0, 2).toUpperCase() : "ME"}
@@ -186,17 +251,31 @@ export default function Header({
             onClick={(e) => e.stopPropagation()}
           >
             <nav className="mobile-nav-links">
-              <a href="#ai-evaluation" onClick={closeMenu} className="mobile-nav-item">
-                AI Vetting Engine
-              </a>
+              <button
+                type="button"
+                onClick={() => {
+                  closeMenu();
+                  onNavigateHome();
+                }}
+                className="mobile-nav-item text-left w-full bg-transparent border-none"
+              >
+                Public Home
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  closeMenu();
+                  onNavigateCandidatePortal();
+                }}
+                className="mobile-nav-item text-left w-full bg-transparent border-none text-emerald-600 font-bold"
+              >
+                Candidate Portal & Dashboard
+              </button>
               <a href="#open-roles" onClick={closeMenu} className="mobile-nav-item">
                 Explore Roles
               </a>
-              <a href="#categories" onClick={closeMenu} className="mobile-nav-item">
-                Tech Stacks
-              </a>
-              <a href="#companies" onClick={closeMenu} className="mobile-nav-item">
-                Featured Teams
+              <a href="#ai-evaluation" onClick={closeMenu} className="mobile-nav-item">
+                AI Vetting Engine
               </a>
             </nav>
 
@@ -208,11 +287,11 @@ export default function Header({
                     className="btn-auth-nav w-full justify-center"
                     onClick={() => {
                       closeMenu();
-                      onOpenAuth("candidate", "login");
+                      onNavigateCandidatePortal();
                     }}
                   >
                     <User size={15} />
-                    <span>Candidate Sign In</span>
+                    <span>Candidate Portal / Login</span>
                   </button>
                   <button
                     type="button"
@@ -225,20 +304,20 @@ export default function Header({
                     <Building2 size={15} />
                     <span>For Employers</span>
                   </button>
-                  <button
-                    type="button"
-                    className="btn-primary-explore w-full"
-                    onClick={() => {
-                      closeMenu();
-                      onExplore();
-                    }}
-                  >
-                    <span>Browse Jobs</span>
-                    <ArrowUpRight size={16} />
-                  </button>
                 </>
               ) : user.role === "candidate" ? (
                 <>
+                  <button
+                    type="button"
+                    className="btn-primary-explore w-full justify-center"
+                    onClick={() => {
+                      closeMenu();
+                      onNavigateCandidatePortal();
+                    }}
+                  >
+                    <Briefcase size={15} />
+                    <span>Candidate Dashboard</span>
+                  </button>
                   <button
                     type="button"
                     className="btn-auth-nav w-full justify-center"
@@ -249,17 +328,6 @@ export default function Header({
                   >
                     <FileText size={15} />
                     <span>My Applications</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="employer-btn w-full justify-center"
-                    onClick={() => {
-                      closeMenu();
-                      onOpenProfile();
-                    }}
-                  >
-                    <User size={15} />
-                    <span>My Profile</span>
                   </button>
                   <button
                     type="button"
