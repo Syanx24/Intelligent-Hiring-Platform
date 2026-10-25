@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   Briefcase,
@@ -13,7 +13,7 @@ import {
   User,
   X,
 } from "lucide-react";
-import { loginUser, registerUser } from "../service/apiCall.js";
+import { loginUser, registerUser } from "../service/authAPI.js";
 
 export default function AuthModal({
   isOpen,
@@ -26,6 +26,12 @@ export default function AuthModal({
   const [mode, setMode] = useState(initialMode); // "login" | "register"
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [validationErrors, setValidationErrors] = useState([]);
+
+  const clearErrors = () => {
+    setError("");
+    setValidationErrors([]);
+  };
 
   // Form Fields
   const [name, setName] = useState("");
@@ -36,11 +42,19 @@ export default function AuthModal({
   const [companyName, setCompanyName] = useState("");
   const [companyWebsite, setCompanyWebsite] = useState("");
 
+  useEffect(() => {
+    if (isOpen) {
+      setRole(initialRole);
+      setMode(initialMode);
+      clearErrors();
+    }
+  }, [initialMode, initialRole, isOpen]);
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+    clearErrors();
     setLoading(true);
 
     try {
@@ -64,7 +78,8 @@ export default function AuthModal({
         onClose();
       }
     } catch (err) {
-      setError(err.message || "Authentication failed. Please check your credentials.");
+      setError(err.errors?.length ? "" : err.message || "Authentication failed. Please check your credentials.");
+      setValidationErrors(err.errors || []);
     } finally {
       setLoading(false);
     }
@@ -108,14 +123,14 @@ export default function AuthModal({
           </p>
         </div>
 
-        {/* Role Selector Tabs (Candidate vs Company) */}
+        {/* Role Selector Tabs */}
         <div className="auth-role-tabs">
           <button
             type="button"
             className={`auth-role-tab ${role === "candidate" ? "role-active" : ""}`}
             onClick={() => {
               setRole("candidate");
-              setError("");
+              clearErrors();
             }}
           >
             <User size={16} />
@@ -126,11 +141,11 @@ export default function AuthModal({
             className={`auth-role-tab ${role === "company" ? "role-active" : ""}`}
             onClick={() => {
               setRole("company");
-              setError("");
+              clearErrors();
             }}
           >
             <Building2 size={16} />
-            <span>Company / Employer</span>
+            <span>Recruiter</span>
           </button>
         </div>
 
@@ -141,7 +156,7 @@ export default function AuthModal({
             className={`mode-btn ${mode === "login" ? "mode-active" : ""}`}
             onClick={() => {
               setMode("login");
-              setError("");
+              clearErrors();
             }}
           >
             Sign In
@@ -151,7 +166,7 @@ export default function AuthModal({
             className={`mode-btn ${mode === "register" ? "mode-active" : ""}`}
             onClick={() => {
               setMode("register");
-              setError("");
+              clearErrors();
             }}
           >
             Register
@@ -160,9 +175,14 @@ export default function AuthModal({
 
         {/* Form Body */}
         <form className="auth-form" onSubmit={handleSubmit}>
-          {error && (
+          {(error || validationErrors.length > 0) && (
             <div className="form-alert-error" role="alert">
-              {error}
+              {error && <p>{error}</p>}
+              {validationErrors.length > 0 && (
+                <ul className="list-disc space-y-1 pl-5">
+                  {validationErrors.map((item) => <li key={item}>{item}</li>)}
+                </ul>
+              )}
             </div>
           )}
 
@@ -284,7 +304,7 @@ export default function AuthModal({
 
           <div className="form-group">
             <label className="field-label" htmlFor="auth-password">
-              Password {mode === "register" && "(min. 6 characters)"} *
+              Password {mode === "register" && "(6+ chars, uppercase, lowercase, number, special character)"} *
             </label>
             <div className="input-with-icon">
               <Lock size={17} className="input-icon" />
@@ -313,8 +333,8 @@ export default function AuthModal({
                   ? "Authenticating..."
                   : "Creating Account..."
                 : mode === "login"
-                ? `Sign In as ${role === "candidate" ? "Candidate" : "Company"}`
-                : `Register as ${role === "candidate" ? "Candidate" : "Company"}`}
+                ? `Sign In as ${role === "candidate" ? "Candidate" : "Recruiter"}`
+                : `Register as ${role === "candidate" ? "Candidate" : "Recruiter"}`}
             </span>
             <ArrowRight size={17} />
           </button>
@@ -328,7 +348,7 @@ export default function AuthModal({
                   className="link-switch"
                   onClick={() => {
                     setMode("register");
-                    setError("");
+                    clearErrors();
                   }}
                 >
                   Create one now
@@ -342,7 +362,7 @@ export default function AuthModal({
                   className="link-switch"
                   onClick={() => {
                     setMode("login");
-                    setError("");
+                    clearErrors();
                   }}
                 >
                   Sign in here

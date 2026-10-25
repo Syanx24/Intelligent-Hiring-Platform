@@ -2,11 +2,8 @@ import "dotenv/config";
 import cors from "cors";
 import express from "express";
 import mongoose from "mongoose";
-import applicationsRouter from "./routes/applications.js";
-import authRouter from "./routes/auth.js";
-import improvementPlansRouter from "./features/improvements/index.js";
-import jobsRouter from "./routes/jobs.js";
-import resumesRouter from "./routes/resumes.js";
+import apiRouter from "./routes/index.js";
+import ImprovementPlan from "./features/improvement/schema.js";
 
 const app = express();
 const port = Number(process.env.PORT) || 5000;
@@ -28,15 +25,8 @@ app.use(
     },
   }),
 );
-
-app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok" });
-});
-app.use("/api/auth", authRouter);
-app.use("/api/jobs", jobsRouter);
-app.use("/api/applications", applicationsRouter);
-app.use("/api/improvement-plans", improvementPlansRouter);
-app.use("/api/resumes", resumesRouter);
+app.use(express.json({ limit: "4mb" }));
+app.use("/api", apiRouter);
 
 app.use((error, _req, res, _next) => {
   console.error(error);
@@ -50,6 +40,8 @@ if (!process.env.MONGODB_URI) {
 
 try {
   await mongoose.connect(process.env.MONGODB_URI);
+  // Remove the old unique number index from before idea numbers became display-only.
+  await ImprovementPlan.syncIndexes();
   app.listen(port, () => {
     console.log(`Hiring API listening on http://localhost:${port}`);
   });

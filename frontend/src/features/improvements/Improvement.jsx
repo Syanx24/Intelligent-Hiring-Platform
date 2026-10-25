@@ -1,11 +1,9 @@
-import { useEffect, useState } from "react";
-import { Trash2 } from "lucide-react";
+﻿import { useEffect, useState } from "react";
 import {
   createImprovementPlan,
-  deleteImprovementPlan,
   getImprovementPlans,
   updateImprovementPlan,
-} from "../../service/apiCall.js";
+} from "../../service/improvements/improvementsAPI.js";
 
 const statusStyles = {
   Proposed: "bg-[#eef2e7] text-[#64734e]",
@@ -70,20 +68,6 @@ export default function Improvement() {
     }
   };
 
-  const deletePlan = async (plan) => {
-    setBusyIds((current) => [...current, plan._id]);
-    setError("");
-
-    try {
-      await deleteImprovementPlan(plan._id);
-      setPlans((current) => current.filter((item) => item._id !== plan._id));
-    } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setBusyIds((current) => current.filter((id) => id !== plan._id));
-    }
-  };
-
   return (
     <section
       aria-labelledby="improvement-title"
@@ -130,10 +114,10 @@ export default function Improvement() {
           <p className="py-6 text-sm text-slate-500" role="status">Loading feedback entries...</p>
         ) : plans.length ? (
           <ol className="divide-y divide-slate-100">
-            {plans.map((plan) => (
+            {plans.map((plan, index) => (
               <li key={plan._id} className="flex items-center gap-3 py-3.5 transition hover:bg-slate-50/50 rounded-lg px-2">
                 <span className="w-9 shrink-0 font-mono text-xs font-semibold text-slate-400">
-                  #{plan.number}
+                  #{plans.length - index}
                 </span>
                 <input
                   type="checkbox"
@@ -149,15 +133,6 @@ export default function Improvement() {
                 <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[plan.status] || statusStyles.Proposed}`}>
                   {plan.status}
                 </span>
-                <button
-                  type="button"
-                  disabled={busyIds.includes(plan._id)}
-                  onClick={() => deletePlan(plan)}
-                  aria-label={`Delete "${plan.title}"`}
-                  className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 disabled:cursor-wait disabled:opacity-50"
-                >
-                  <Trash2 size={16} />
-                </button>
               </li>
             ))}
           </ol>

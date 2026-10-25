@@ -1,0 +1,30 @@
+
+[
+  {
+    "id": 1,
+    "name": "Name 1",
+    "role": "Web Developer",
+    "image": "/images/profile1.jpg",
+    "linkedin": "https://linkedin.com/",
+    "instagram": "https://instagram.com/",
+    "facebook": "https://facebook.com/"
+  },
+  {
+    "id": 2,
+    "name": "Name 2",
+    "role": "UI/UX Designer",
+    "image": "/images/profile2.jpg",
+    "linkedin": "https://linkedin.com/",
+    "instagram": "https://instagram.com/",
+    "facebook": "https://facebook.com/"
+  },
+  {
+    "id": 3,
+    "name": "Name 3",
+    "role": "Frontend Developer",
+    "image": "/images/profile3.jpg",
+    "linkedin": "https://linkedin.com/",
+    "instagram": "https://instagram.com/",
+    "facebook": "https://facebook.com/"
+  }
+]
