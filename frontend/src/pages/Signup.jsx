@@ -16,9 +16,7 @@ export default function Signup() {
     setError("");
     setSubmitting(true);
     try {
-      const result = await authenticate({ mode: "signup", name, email, password });
-      window.localStorage.setItem("hireme.authToken", result.token);
-      window.localStorage.setItem("hireme.user", JSON.stringify(result.user));
+      await authenticate({ mode: "signup", name, email, password });
       navigate("/", { replace: true });
     } catch (requestError) {
       setError(requestError.message);

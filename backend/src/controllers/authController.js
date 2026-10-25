@@ -85,12 +85,12 @@ export async function login(req, res, next) {
   try {
     const { email, password, role } = req.body ?? {};
 
-    if (!email || !password) {
+    if (typeof email !== "string" || typeof password !== "string" || !email.trim() || !password) {
       return res.status(400).json({ message: "Please provide email and password." });
     }
 
     const cleanEmail = email.trim().toLowerCase();
-    const user = await User.findOne({ email: cleanEmail });
+    const user = await User.findOne({ email: cleanEmail }).select("+password");
 
     if (!user) {
       return res.status(401).json({ message: "Invalid email or password." });

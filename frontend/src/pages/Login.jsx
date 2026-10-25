@@ -15,13 +15,11 @@ export default function Login() {
     setError("");
     setSubmitting(true);
     try {
-      const result = await authenticate({
+      await authenticate({
         mode: "login",
         email,
         password,
       });
-      window.localStorage.setItem("hireme.authToken", result.token);
-      window.localStorage.setItem("hireme.user", JSON.stringify(result.user));
       navigate("/", { replace: true });
     } catch (requestError) {
       setError(requestError.message);

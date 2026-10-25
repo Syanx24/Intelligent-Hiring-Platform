@@ -507,9 +507,6 @@ export function ClosingCta({ onExplore }) {
     </section>
   );
 }
-<<<<<<< HEAD
-=======
-
 export function Footer() {
   return (
     <footer className="site-footer">
@@ -578,4 +575,3 @@ export function Footer() {
     </footer>
   );
 }
->>>>>>> 6834664409879107c2dc6f9f76c1a2666e990a93

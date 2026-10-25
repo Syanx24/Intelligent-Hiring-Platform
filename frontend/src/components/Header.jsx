@@ -1,8 +1,4 @@
 import { useState } from "react";
-<<<<<<< HEAD
-import { ArrowUpRight, Compass, Menu, X } from "lucide-react";
-import { Link } from "react-router-dom";
-=======
 import {
   ArrowUpRight,
   Briefcase,
@@ -15,7 +11,6 @@ import {
   User,
   X,
 } from "lucide-react";
->>>>>>> 6834664409879107c2dc6f9f76c1a2666e990a93
 
 export default function Header({
   user,
@@ -32,32 +27,6 @@ export default function Header({
   const closeMenu = () => setMenuOpen(false);
 
   return (
-<<<<<<< HEAD
-    <header className="topbar">
-      <a className="brand" href="/" aria-label="Hire-Me home">
-        <span className="brand-mark">
-          <Compass size={21} strokeWidth={2.3} />
-        </span>
-        <span>Hire-Me<span className="brand-period">.</span></span>
-      </a>
-      <button
-        className="mobile-menu-button"
-        aria-label="Toggle navigation"
-        aria-expanded={menuOpen}
-        onClick={() => setMenuOpen((open) => !open)}
-      >
-        {menuOpen ? <X size={20} /> : <Menu size={20} />}
-      </button>
-      <nav className={menuOpen ? "nav-links nav-open" : "nav-links"}>
-        <a href="/#open-roles" onClick={closeMenu}>Find a job</a>
-        <a href="/#companies" onClick={closeMenu}>Companies</a>
-        <a href="/#how-it-works" onClick={closeMenu}>Career advice</a>
-      </nav>
-      <div className="nav-actions">
-        <Link className="button button-dark nav-cta" to="/login">
-          Login <ArrowUpRight size={15} />
-        </Link>
-=======
     <header className="topbar-header">
       <div className="topbar-inner">
         <a className="brand-logo" href="#home" aria-label="Northstar Home">
@@ -65,9 +34,9 @@ export default function Header({
             <Compass size={22} strokeWidth={2.4} />
           </span>
           <span className="brand-name">
-            northstar<span className="brand-accent-dot">.</span>
+            Hire-Me<span className="brand-accent-dot">.</span>
           </span>
-          <span className="brand-sub-badge">Platform</span>
+          <span className="brand-sub-badge">Nextech</span>
         </a>
 
         {/* Desktop Navigation */}
@@ -207,7 +176,6 @@ export default function Header({
             {menuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
->>>>>>> 6834664409879107c2dc6f9f76c1a2666e990a93
       </div>
 
       {/* Mobile Drawer */}

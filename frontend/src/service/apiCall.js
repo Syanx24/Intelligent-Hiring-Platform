@@ -169,20 +169,13 @@ export function submitApplication(application) {
   );
 }
 
-<<<<<<< HEAD
 export function authenticate({ mode, name, email, password }) {
-  return requestJson(
-    `/api/auth/${mode}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
-    },
-    mode === "signup" ? "Could not create account" : "Could not sign in",
-  );
+  if (mode === "signup") {
+    return registerUser({ name, email, password, role: "candidate" });
+  }
+  return loginUser({ email, password });
 }
 
-=======
 export function getMyApplications({ signal } = {}) {
   return requestJson(
     "/api/applications/candidate/my-applications",
@@ -259,7 +252,6 @@ export function updateApplicationStatus(applicationId, status) {
    ROADMAP IMPROVEMENTS APIS
    ========================================================================== */
 
->>>>>>> 6834664409879107c2dc6f9f76c1a2666e990a93
 export function getImprovementPlans({ signal } = {}) {
   return requestJson(
     "/api/improvement-plans",
