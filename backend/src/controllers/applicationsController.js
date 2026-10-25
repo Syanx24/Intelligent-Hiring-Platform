@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Application from "../models/Application.js";
 import Job from "../models/Job.js";
+import Resume from "../models/Resume.js";
 
 export async function createApplication(req, res, next) {
   try {
@@ -13,7 +14,7 @@ export async function createApplication(req, res, next) {
     const applicantName = (name || req.user?.name || "").trim();
     const applicantEmail = (email || req.user?.email || "").trim().toLowerCase();
     const applicantGithub = (githubUrl || req.user?.githubUrl || "").trim();
-    const applicantResume = (resumeUrl || req.user?.resumeUrl || "").trim();
+    let applicantResume = (resumeUrl || req.user?.resumeUrl || "").trim();
 
     if (
       !applicantName ||
@@ -26,6 +27,25 @@ export async function createApplication(req, res, next) {
     const job = await Job.findById(jobId);
     if (!job) {
       return res.status(404).json({ message: "This job is no longer available." });
+    }
+
+    // If PDF was uploaded as base64 in application, store binary in MongoDB cluster
+    if (
+      applicantResume.startsWith("data:application/pdf;base64,") ||
+      applicantResume.startsWith("data:application/octet-stream;base64,")
+    ) {
+      const base64Data = applicantResume.replace(/^data:[^;]+;base64,/, "");
+      const buffer = Buffer.from(base64Data, "base64");
+      if (buffer.length <= 2 * 1024 * 1024) {
+        const resumeDoc = await Resume.create({
+          candidateUser: req.user?._id || new mongoose.Types.ObjectId(),
+          fileName: `${applicantName.replace(/[^a-zA-Z0-9_-]/g, "_")}_CV.pdf`,
+          fileSize: buffer.length,
+          contentType: "application/pdf",
+          data: buffer,
+        });
+        applicantResume = `/api/resumes/${resumeDoc._id}`;
+      }
     }
 
     const applicationData = {

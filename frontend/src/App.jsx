@@ -24,6 +24,7 @@ import {
   JobApplicantsModal,
   PostJobModal,
 } from "./components/CompanyModals.jsx";
+import CandidatePortalPage from "./pages/CandidatePortalPage.jsx";
 import Improvement from "./features/improvements/Improvement.jsx";
 import {
   clearStoredAuth,
@@ -34,6 +35,14 @@ import {
 } from "./service/apiCall.js";
 
 function App() {
+  // Page Routing State ('home' | 'candidate-portal')
+  const [currentPage, setCurrentPage] = useState(() => {
+    if (typeof window !== "undefined" && window.location.hash.startsWith("#/candidate")) {
+      return "candidate-portal";
+    }
+    return "home";
+  });
+
   // Global & Jobs State
   const [jobs, setJobs] = useState([]);
   const [activeCategory, setActiveCategory] = useState("All roles");
@@ -71,6 +80,19 @@ function App() {
     isOpen: false,
     job: null,
   });
+
+  // Listen to hash changes for direct URL navigation / bookmarks
+  useEffect(() => {
+    const handleHashChange = () => {
+      if (window.location.hash.startsWith("#/candidate")) {
+        setCurrentPage("candidate-portal");
+      } else {
+        setCurrentPage("home");
+      }
+    };
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
 
   // Check & restore user session on mount
   useEffect(() => {
@@ -114,6 +136,18 @@ function App() {
 
   const scrollToJobs = () =>
     document.getElementById("open-roles")?.scrollIntoView({ behavior: "smooth" });
+
+  const navigateToCandidate = () => {
+    setCurrentPage("candidate-portal");
+    window.location.hash = "#/candidate";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const navigateToHome = () => {
+    setCurrentPage("home");
+    window.location.hash = "#home";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const openApply = (job) => {
     setSelectedJob(null);
@@ -165,6 +199,12 @@ function App() {
   const handleAuthSuccess = (authenticatedUser, message) => {
     setUser(authenticatedUser);
     setNotice(message || "Signed in successfully.");
+    // After login, candidate automatically goes to their candidate portal / dashboard
+    if (authenticatedUser?.role === "candidate") {
+      setCurrentPage("candidate-portal");
+      window.location.hash = "#/candidate/dashboard";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   const handleJobSaved = (savedJob) => {
@@ -181,15 +221,21 @@ function App() {
       {/* Header with full Candidate & Company Auth integration */}
       <Header
         user={user}
+        currentPage={currentPage}
+        onNavigateCandidatePortal={navigateToCandidate}
+        onNavigateHome={navigateToHome}
         onExplore={scrollToJobs}
         onOpenAuth={(role, mode) =>
           setAuthModal({ isOpen: true, role, mode })
         }
         onOpenProfile={() => {
-          if (user?.role === "candidate") setCandidateProfileOpen(true);
+          if (user?.role === "candidate") navigateToCandidate();
           else if (user?.role === "company") setCompanyProfileOpen(true);
         }}
-        onOpenApplications={() => setMyApplicationsOpen(true)}
+        onOpenApplications={() => {
+          if (user?.role === "candidate") navigateToCandidate();
+          else setMyApplicationsOpen(true);
+        }}
         onOpenDashboard={() => setCompanyDashboardOpen(true)}
         onOpenPostJob={() =>
           setPostJobModal({ isOpen: true, jobToEdit: null })
@@ -197,43 +243,56 @@ function App() {
         onLogout={handleLogout}
       />
 
-      <main id="home">
-        {/* Preserved Landing Page Sections */}
-        <Hero
-          search={search}
-          location={location}
-          onSearchChange={setSearch}
-          onLocationChange={setLocation}
-          onExplore={scrollToJobs}
-        />
-        <TrustRow />
-        <EngineeringIntelligence onExplore={scrollToJobs} />
-        <CategorySection
-          onSelectCategory={(category) => {
-            setActiveCategory(category);
-            scrollToJobs();
+      {currentPage === "candidate-portal" ? (
+        /* Dedicated Candidate Site Page: Login & Register when unauthenticated, Dashboard when logged in */
+        <CandidatePortalPage
+          user={user}
+          onUserUpdate={(updatedUser, message) => {
+            setUser(updatedUser);
+            if (message) setNotice(message);
           }}
-          onExplore={scrollToJobs}
+          onNavigateHome={navigateToHome}
+          onLogout={handleLogout}
         />
-        <FeaturedSection
-          jobs={featuredJobs}
-          onSelectJob={setSelectedJob}
-          onExplore={scrollToJobs}
-        />
-        <JobsSection
-          jobs={jobs}
-          activeCategory={activeCategory}
-          loading={loading}
-          error={error}
-          onCategoryChange={setActiveCategory}
-          onClearFilters={clearFilters}
-          onRetry={() => setRetryCount((count) => count + 1)}
-          onSelectJob={setSelectedJob}
-          onShowAll={clearFilters}
-        />
-        <ClosingCta onExplore={scrollToJobs} />
-        <Improvement />
-      </main>
+      ) : (
+        <main id="home">
+          {/* Preserved Landing Page Sections */}
+          <Hero
+            search={search}
+            location={location}
+            onSearchChange={setSearch}
+            onLocationChange={setLocation}
+            onExplore={scrollToJobs}
+          />
+          <TrustRow />
+          <EngineeringIntelligence onExplore={scrollToJobs} />
+          <CategorySection
+            onSelectCategory={(category) => {
+              setActiveCategory(category);
+              scrollToJobs();
+            }}
+            onExplore={scrollToJobs}
+          />
+          <FeaturedSection
+            jobs={featuredJobs}
+            onSelectJob={setSelectedJob}
+            onExplore={scrollToJobs}
+          />
+          <JobsSection
+            jobs={jobs}
+            activeCategory={activeCategory}
+            loading={loading}
+            error={error}
+            onCategoryChange={setActiveCategory}
+            onClearFilters={clearFilters}
+            onRetry={() => setRetryCount((count) => count + 1)}
+            onSelectJob={setSelectedJob}
+            onShowAll={clearFilters}
+          />
+          <ClosingCta onExplore={scrollToJobs} />
+          <Improvement />
+        </main>
+      )}
 
       <Footer />
 
