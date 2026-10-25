@@ -1,10 +1,3 @@
-<<<<<<< HEAD
-import Router from "./router/Router.jsx";
-
-export default function App() {
-  
-  return <Router />;
-=======
 import { useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
 import Header from "./components/Header.jsx";
@@ -403,5 +396,4 @@ function App() {
       )}
     </div>
   );
->>>>>>> f7a271de36859c06fd6e709af4247cc5cc98d015
 }
