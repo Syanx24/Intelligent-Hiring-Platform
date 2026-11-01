@@ -42,9 +42,29 @@ try {
   await mongoose.connect(process.env.MONGODB_URI);
   // Remove the old unique number index from before idea numbers became display-only.
   await ImprovementPlan.syncIndexes();
-  app.listen(port, () => {
+  const server = app.listen(port, () => {
     console.log(`Hiring API listening on http://localhost:${port}`);
   });
+
+  server.on("error", (err) => {
+    if (err.code === "EADDRINUSE") {
+      console.error(`Port ${port} is already in use. Please terminate existing node processes or check for another running instance.`);
+    } else {
+      console.error("Server error:", err);
+    }
+    process.exit(1);
+  });
+
+  const gracefulShutdown = () => {
+    server.close(() => {
+      mongoose.connection.close(false).finally(() => {
+        process.exit(0);
+      });
+    });
+  };
+
+  process.on("SIGINT", gracefulShutdown);
+  process.on("SIGTERM", gracefulShutdown);
 } catch (error) {
   console.error("Could not connect to MongoDB:", error.message);
   process.exit(1);

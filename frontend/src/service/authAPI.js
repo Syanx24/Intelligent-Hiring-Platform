@@ -60,3 +60,28 @@ export async function updateUserProfile(profileData) {
   if (data.user) setStoredAuth(getStoredToken(), data.user);
   return data.user;
 }
+
+export async function uploadProfileAvatar({ fileName, fileData }) {
+  const data = await requestJson(
+    "/api/auth/upload-avatar",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fileName, fileData }),
+    },
+    "Could not upload profile photo",
+  );
+  if (data.user) setStoredAuth(getStoredToken(), data.user);
+  return data;
+}
+
+export async function removeProfileAvatar() {
+  const data = await requestJson(
+    "/api/auth/avatar",
+    { method: "DELETE" },
+    "Could not remove profile photo",
+  );
+  if (data.user) setStoredAuth(getStoredToken(), data.user);
+  return data;
+}
+

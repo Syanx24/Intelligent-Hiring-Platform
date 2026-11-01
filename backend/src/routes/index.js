@@ -6,13 +6,24 @@ import {
   streamApplicationResume,
   updateApplicationStatus,
 } from "../controllers/applicationController.js";
-import { login, register } from "../controllers/auth.js";
+import {
+  getGithubAuthStatus,
+  githubAuthCallback,
+  initiateGithubAuth,
+  login,
+  register,
+} from "../controllers/auth.js";
 import {
   getCandidate,
   streamCandidateResume,
   updateCandidateProfile,
   uploadCandidateResume,
 } from "../controllers/candidateController.js";
+import {
+  removeAvatar,
+  streamAvatar,
+  uploadAvatar,
+} from "../controllers/avatarController.js";
 import {
   createJob,
   deleteJob,
@@ -46,6 +57,9 @@ function accountController(req, res, next, candidateController, recruiterControl
 // Authentication and account profile routes.
 router.post("/auth/register", register);
 router.post("/auth/login", login);
+router.get("/auth/github", initiateGithubAuth);
+router.get("/auth/github/callback", githubAuthCallback);
+router.get("/auth/github/status", getGithubAuthStatus);
 
 router.get(
   "/auth/me",
@@ -57,7 +71,13 @@ router.put(
   authRequired,
   (req, res, next) => accountController(req, res, next, updateCandidateProfile, updateRecruiterProfile),
 );
+router.post("/auth/upload-avatar", authRequired, uploadAvatar);
+router.delete("/auth/avatar", authRequired, removeAvatar);
 router.post("/auth/upload-resume", authRequired, roleRequired("candidate"), uploadCandidateResume);
+
+// Public profile avatar streaming routes.
+router.get("/avatars/:role/:id", streamAvatar);
+router.get("/avatars/:id", streamAvatar);
 
 // Public job browsing and recruiter-only job management.
 // Keep the static recruiter path before the dynamic job ID route.

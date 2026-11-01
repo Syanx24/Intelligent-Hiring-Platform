@@ -14,6 +14,13 @@ export default function ProtectView({ role, children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const oauthToken = params.get("oauth_token");
+    if (oauthToken) {
+      localStorage.setItem("token", oauthToken);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     getCurrentUser()
       .then(setUser)
       .finally(() => setLoading(false));
