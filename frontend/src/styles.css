@@ -2868,6 +2868,71 @@ a {
   border-radius: 2px;
 }
 
+/* GitHub OAuth Option */
+.auth-oauth-wrap {
+  margin-bottom: 6px;
+}
+
+.btn-github-oauth {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #0f172a;
+  color: #ffffff;
+  border: 1px solid #1e293b;
+  border-radius: 11px;
+  padding: 11px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+}
+
+.btn-github-oauth:hover:not(:disabled) {
+  background: #1e293b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+}
+
+.btn-github-oauth:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-github-oauth:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.github-icon {
+  flex-shrink: 0;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 16px 0 12px;
+  color: var(--text-subtle);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.auth-divider span {
+  padding: 0 12px;
+}
+
 .input-with-icon {
   position: relative;
   display: flex;

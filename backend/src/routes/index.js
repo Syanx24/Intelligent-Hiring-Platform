@@ -6,7 +6,13 @@ import {
   streamApplicationResume,
   updateApplicationStatus,
 } from "../controllers/applicationController.js";
-import { login, register } from "../controllers/auth.js";
+import {
+  getGithubAuthStatus,
+  githubAuthCallback,
+  initiateGithubAuth,
+  login,
+  register,
+} from "../controllers/auth.js";
 import {
   getCandidate,
   streamCandidateResume,
@@ -46,6 +52,9 @@ function accountController(req, res, next, candidateController, recruiterControl
 // Authentication and account profile routes.
 router.post("/auth/register", register);
 router.post("/auth/login", login);
+router.get("/auth/github", initiateGithubAuth);
+router.get("/auth/github/callback", githubAuthCallback);
+router.get("/auth/github/status", getGithubAuthStatus);
 
 router.get(
   "/auth/me",

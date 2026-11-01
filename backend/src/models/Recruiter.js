@@ -4,8 +4,11 @@ const recruiterSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true, maxlength: 100 },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true, maxlength: 254 },
-    password: { type: String, required: true, select: false },
+    password: { type: String, select: false },
     role: { type: String, enum: ["company"], default: "company", immutable: true },
+    authProvider: { type: String, enum: ["local", "github"], default: "local" },
+    githubId: { type: String, sparse: true, default: undefined },
+    avatarUrl: { type: String, trim: true, default: "" },
     companyName: { type: String, trim: true, default: "" },
     companyWebsite: { type: String, trim: true, default: "" },
     companyInitials: { type: String, trim: true, default: "" },

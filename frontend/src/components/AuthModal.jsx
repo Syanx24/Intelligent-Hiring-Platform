@@ -19,6 +19,7 @@ export default function AuthModal({
   isOpen,
   initialRole = "candidate",
   initialMode = "login",
+  initialError = "",
   onClose,
   onAuthSuccess,
 }) {
@@ -46,9 +47,20 @@ export default function AuthModal({
     if (isOpen) {
       setRole(initialRole);
       setMode(initialMode);
-      clearErrors();
+      if (initialError) {
+        setError(initialError);
+        setValidationErrors([]);
+      } else {
+        clearErrors();
+      }
     }
-  }, [initialMode, initialRole, isOpen]);
+  }, [initialError, initialMode, initialRole, isOpen]);
+
+  const handleGithubLogin = () => {
+    clearErrors();
+    const backendUrl = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/$/, "");
+    window.location.href = `${backendUrl}/api/auth/github?role=${role}`;
+  };
 
   if (!isOpen) return null;
 
@@ -171,6 +183,27 @@ export default function AuthModal({
           >
             Register
           </button>
+        </div>
+
+        {/* GitHub OAuth Button */}
+        <div className="auth-oauth-wrap">
+          <button
+            type="button"
+            id="btn-github-auth"
+            className="btn-github-oauth"
+            onClick={handleGithubLogin}
+            disabled={loading}
+          >
+            <Github size={18} className="github-icon" />
+            <span>
+              {mode === "login"
+                ? `Continue with GitHub as ${role === "candidate" ? "Candidate" : "Recruiter"}`
+                : `Sign up with GitHub as ${role === "candidate" ? "Candidate" : "Recruiter"}`}
+            </span>
+          </button>
+          <div className="auth-divider">
+            <span>or continue with email</span>
+          </div>
         </div>
 
         {/* Form Body */}

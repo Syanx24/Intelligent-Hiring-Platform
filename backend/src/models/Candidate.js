@@ -4,8 +4,11 @@ const candidateSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true, maxlength: 100 },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true, maxlength: 254 },
-    password: { type: String, required: true, select: false },
+    password: { type: String, select: false },
     role: { type: String, enum: ["candidate"], default: "candidate", immutable: true },
+    authProvider: { type: String, enum: ["local", "github"], default: "local" },
+    githubId: { type: String, sparse: true, default: undefined },
+    avatarUrl: { type: String, trim: true, default: "" },
     githubUrl: { type: String, trim: true, default: "" },
     headline: { type: String, trim: true, default: "" },
     portfolioUrl: { type: String, trim: true, default: "" },

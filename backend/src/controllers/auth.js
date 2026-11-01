@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import Candidate from "../models/Candidate.js";
 import Recruiter from "../models/Recruiter.js";
@@ -155,5 +156,221 @@ export async function login(req, res, next) {
     });
   } catch (error) {
     return next(error);
+  }
+}
+
+function getClientUrl() {
+  return (process.env.CLIENT_URL || "http://localhost:5173").replace(/\/$/, "");
+}
+
+function getCallbackUrl(req) {
+  return (
+    process.env.GITHUB_CALLBACK_URL ||
+    `${req.protocol}://${req.get("host")}/api/auth/github/callback`
+  );
+}
+
+export function getGithubAuthStatus(_req, res) {
+  const configured = Boolean(
+    process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET,
+  );
+  return res.json({
+    enabled: configured,
+    clientId: configured ? process.env.GITHUB_CLIENT_ID : null,
+  });
+}
+
+export function initiateGithubAuth(req, res) {
+  const clientUrl = getClientUrl();
+  const role = normalizeRole(req.query.role || "candidate");
+  const clientId = process.env.GITHUB_CLIENT_ID;
+
+  if (!clientId || !process.env.GITHUB_CLIENT_SECRET) {
+    return res.redirect(
+      `${clientUrl}?oauth_error=${encodeURIComponent(
+        "GitHub OAuth is not configured. Please add GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET to backend/.env",
+      )}`,
+    );
+  }
+
+  const state = Buffer.from(
+    JSON.stringify({
+      role,
+      nonce: crypto.randomBytes(16).toString("hex"),
+    }),
+  ).toString("base64url");
+
+  const callbackUrl = getCallbackUrl(req);
+  const githubAuthorizeUrl = new URL("https://github.com/login/oauth/authorize");
+  githubAuthorizeUrl.searchParams.set("client_id", clientId);
+  githubAuthorizeUrl.searchParams.set("redirect_uri", callbackUrl);
+  githubAuthorizeUrl.searchParams.set("scope", "read:user user:email");
+  githubAuthorizeUrl.searchParams.set("state", state);
+
+  return res.redirect(githubAuthorizeUrl.toString());
+}
+
+export async function githubAuthCallback(req, res, next) {
+  const clientUrl = getClientUrl();
+  const { code, state, error: oauthError, error_description: errorDescription } = req.query;
+
+  if (oauthError) {
+    return res.redirect(
+      `${clientUrl}?oauth_error=${encodeURIComponent(
+        errorDescription || "GitHub authorization was cancelled.",
+      )}`,
+    );
+  }
+
+  if (!code) {
+    return res.redirect(
+      `${clientUrl}?oauth_error=${encodeURIComponent("No authorization code received from GitHub.")}`,
+    );
+  }
+
+  let requestedRole = "candidate";
+  try {
+    if (state) {
+      const decoded = JSON.parse(Buffer.from(state, "base64url").toString("utf-8"));
+      if (decoded.role) requestedRole = normalizeRole(decoded.role);
+    }
+  } catch {
+    // Ignore malformed state and default to candidate.
+  }
+
+  try {
+    const tokenRes = await fetch("https://github.com/login/oauth/access_token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        client_id: process.env.GITHUB_CLIENT_ID,
+        client_secret: process.env.GITHUB_CLIENT_SECRET,
+        code,
+      }),
+    });
+
+    const tokenData = await tokenRes.json();
+    if (!tokenData.access_token) {
+      return res.redirect(
+        `${clientUrl}?oauth_error=${encodeURIComponent(
+          tokenData.error_description || "Could not retrieve access token from GitHub.",
+        )}`,
+      );
+    }
+
+    const userRes = await fetch("https://api.github.com/user", {
+      headers: {
+        Authorization: `Bearer ${tokenData.access_token}`,
+        "User-Agent": "Northstar-Hiring-App",
+        Accept: "application/vnd.github.v3+json",
+      },
+    });
+
+    if (!userRes.ok) {
+      return res.redirect(
+        `${clientUrl}?oauth_error=${encodeURIComponent("Could not load user profile from GitHub.")}`,
+      );
+    }
+
+    const ghUser = await userRes.json();
+
+    let email = ghUser.email;
+    if (!email) {
+      const emailRes = await fetch("https://api.github.com/user/emails", {
+        headers: {
+          Authorization: `Bearer ${tokenData.access_token}`,
+          "User-Agent": "Northstar-Hiring-App",
+          Accept: "application/vnd.github.v3+json",
+        },
+      });
+      if (emailRes.ok) {
+        const emails = await emailRes.json();
+        const primary =
+          emails.find((e) => e.primary && e.verified) ||
+          emails.find((e) => e.verified) ||
+          emails[0];
+        if (primary?.email) email = primary.email;
+      }
+    }
+
+    if (!email) {
+      email = `${ghUser.login || ghUser.id}@users.noreply.github.com`;
+    }
+    email = cleanEmail(email);
+
+    const githubIdStr = String(ghUser.id);
+    let account = null;
+
+    account = await Candidate.findOne({ githubId: githubIdStr });
+    if (!account) {
+      account = await Recruiter.findOne({ githubId: githubIdStr });
+    }
+
+    if (!account) {
+      account = await Candidate.findOne({ email });
+      if (account) {
+        account.githubId = githubIdStr;
+        account.authProvider = "github";
+        if (!account.avatarUrl && ghUser.avatar_url) account.avatarUrl = ghUser.avatar_url;
+        if (!account.githubUrl && ghUser.login) account.githubUrl = `https://github.com/${ghUser.login}`;
+        await account.save();
+      } else {
+        account = await Recruiter.findOne({ email });
+        if (account) {
+          account.githubId = githubIdStr;
+          account.authProvider = "github";
+          if (!account.avatarUrl && ghUser.avatar_url) account.avatarUrl = ghUser.avatar_url;
+          await account.save();
+        }
+      }
+    }
+
+    if (!account) {
+      const randomPassword = await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 10);
+      const name = (ghUser.name && ghUser.name.trim()) || ghUser.login || "GitHub User";
+
+      if (requestedRole === "candidate") {
+        account = await Candidate.create({
+          name,
+          email,
+          password: randomPassword,
+          role: "candidate",
+          authProvider: "github",
+          githubId: githubIdStr,
+          avatarUrl: ghUser.avatar_url || "",
+          githubUrl: ghUser.login ? `https://github.com/${ghUser.login}` : "",
+          headline: ghUser.bio ? ghUser.bio.slice(0, 100) : "",
+          location: ghUser.location || "",
+        });
+      } else {
+        const companyName = ghUser.company ? ghUser.company.replace(/^@/, "").trim() : `${name}'s Team`;
+        account = await Recruiter.create({
+          name,
+          email,
+          password: randomPassword,
+          role: "company",
+          authProvider: "github",
+          githubId: githubIdStr,
+          avatarUrl: ghUser.avatar_url || "",
+          companyName,
+          companyInitials: companyName.slice(0, 4).toUpperCase(),
+          companyWebsite: ghUser.blog || "",
+          companyLocation: ghUser.location || "",
+        });
+      }
+    }
+
+    const token = generateToken(account);
+    return res.redirect(
+      `${clientUrl}/?oauth_token=${encodeURIComponent(token)}&oauth_status=success`,
+    );
+  } catch (err) {
+    console.error("GitHub OAuth Callback Error:", err);
+    return res.redirect(
+      `${clientUrl}?oauth_error=${encodeURIComponent("An error occurred during GitHub authentication.")}`,
+    );
   }
 }
