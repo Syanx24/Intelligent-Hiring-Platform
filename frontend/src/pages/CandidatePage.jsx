@@ -563,12 +563,14 @@ export default function CandidatePage({
             <button
               type="button"
               onClick={onNavigateHome}
-              className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-900 transition"
+              className="inline-flex items-center gap-2 text-xs font-semibold text-[#52525b] hover:text-[#18181b] transition"
             >
-              <Compass size={15} className="text-emerald-600" />
-              <span>Northstar Platform</span>
-              <span className="text-slate-300">/</span>
-              <span className="text-slate-800">Candidate Gateway</span>
+              <div className="flex h-5 w-5 items-center justify-center rounded-md bg-[#18181b] font-mono text-[10px] font-bold text-[#c3c0ff]">
+                λ
+              </div>
+              <span className="font-sans font-bold text-[#18181b]">HireMe</span>
+              <span className="text-[#a1a1aa]">/</span>
+              <span className="font-mono text-[#52525b]">Candidate Gateway</span>
             </button>
 
             <div className="flex items-center gap-3">
@@ -888,12 +890,14 @@ export default function CandidatePage({
               <button
                 type="button"
                 onClick={onNavigateHome}
-                className="font-medium text-slate-500 hover:text-slate-900 transition flex items-center gap-1.5"
+                className="font-medium text-[#52525b] hover:text-[#18181b] transition flex items-center gap-1.5"
               >
-                <Compass size={14} className="text-emerald-600" />
-                <span>Public Site</span>
+                <div className="flex h-5 w-5 items-center justify-center rounded-md bg-[#18181b] font-mono text-[10px] font-bold text-[#c3c0ff]">
+                  λ
+                </div>
+                <span className="font-sans font-bold text-[#18181b]">HireMe</span>
               </button>
-              <span className="text-slate-300">/</span>
+              <span className="text-[#a1a1aa]">/</span>
               {user.avatarUrl ? (
                 <img
                   src={user.avatarUrl}

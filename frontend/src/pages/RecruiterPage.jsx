@@ -107,19 +107,22 @@ export default function RecruiterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
-          <a href="/" className="flex items-center gap-2 font-bold tracking-tight" aria-label="Hire-Me home">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-white">
-              <Building2 size={18} />
-            </span>
-            Hire-Me<span className="text-emerald-600">.</span>
+    <div className="min-h-screen bg-[#faf9f6] text-[#18181b]">
+      <header className="sticky top-0 z-40 border-b border-[#e4e4e7]/80 bg-[#faf9f6]/90 backdrop-blur-md">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
+          <a href="/" className="flex items-center gap-2.5 font-bold tracking-tight transition-transform active:scale-95" aria-label="HireMe home">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#18181b] font-mono text-sm font-bold text-[#c3c0ff] shadow-sm">
+              λ
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="font-sans text-[17px] font-semibold tracking-tight text-[#18181b]">HireMe</span>
+              <span className="rounded border border-[#e4e4e7] bg-[#f4f3f0] px-1.5 py-0.5 font-mono text-[10px] font-medium tracking-wide text-[#52525b]">signal</span>
+            </div>
           </a>
           <div className="flex items-center gap-3">
             <button
               type="button"
-              className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 transition"
+              className="flex items-center gap-2 rounded-xl border border-[#e4e4e7] bg-white px-3 py-1.5 text-xs font-semibold text-[#18181b] shadow-xs hover:bg-[#f4f3f0] transition"
               onClick={() => setProfileOpen(true)}
               title="Edit Company Profile & Logo"
             >
@@ -127,30 +130,30 @@ export default function RecruiterPage() {
                 <img
                   src={user.avatarUrl}
                   alt={user.companyName || user.name}
-                  className="h-6 w-6 rounded-lg object-cover border border-slate-200"
+                  className="h-6 w-6 rounded-lg object-cover border border-[#e4e4e7]"
                 />
               ) : (
                 <span
                   className="flex h-6 w-6 items-center justify-center rounded-lg text-[10px] font-black text-white"
-                  style={{ backgroundColor: user.companyColor || "#059669" }}
+                  style={{ backgroundColor: user.companyColor || "#4f46e5" }}
                 >
                   {(user.companyInitials || (user.companyName || user.name || "CO").slice(0, 2)).toUpperCase()}
                 </span>
               )}
-              <span className="hidden sm:inline">{user.companyName || user.name}</span>
+              <span className="hidden sm:inline font-mono text-[12px]">{user.companyName || user.name}</span>
             </button>
             <button
               type="button"
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-[#e4e4e7] bg-white px-3 py-1.5 text-xs font-semibold text-[#52525b] hover:bg-[#f4f3f0] hover:text-[#18181b] transition"
               onClick={signOut}
             >
-              <LogOut size={15} /> Sign out
+              <LogOut size={14} /> Sign out
             </button>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-5 py-10 sm:py-14">
+      <main className="mx-auto max-w-6xl px-5 py-8 sm:py-12">
         <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div className="flex items-start gap-4">
             {user.avatarUrl ? (
@@ -162,50 +165,64 @@ export default function RecruiterPage() {
                 <img
                   src={user.avatarUrl}
                   alt={user.companyName || user.name}
-                  className="h-16 w-16 rounded-2xl object-cover border-2 border-slate-200 shadow-sm"
+                  className="h-16 w-16 rounded-2xl object-cover border-2 border-[#e4e4e7] shadow-sm"
                 />
               </div>
             ) : (
               <div
                 onClick={() => setProfileOpen(true)}
                 className="flex h-16 w-16 items-center justify-center rounded-2xl text-xl font-black text-white shadow-sm shrink-0 cursor-pointer hover:opacity-90 transition"
-                style={{ backgroundColor: user.companyColor || "#059669" }}
+                style={{ backgroundColor: user.companyColor || "#4f46e5" }}
                 title="Upload Company Logo"
               >
                 {(user.companyInitials || (user.companyName || user.name || "CO").slice(0, 2)).toUpperCase()}
               </div>
             )}
             <div>
-              <p className="mb-1 text-xs font-bold text-emerald-700 tracking-wider uppercase">RECRUITER WORKSPACE</p>
-              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Your hiring dashboard</h1>
-              <p className="mt-1 text-slate-600">
-                Manage roles and review candidates for <strong className="text-slate-900">{user.companyName || "your company"}</strong>.
+              <p className="mb-1 font-mono text-[11px] font-semibold uppercase tracking-wider text-[#4f46e5]">RECRUITER WORKSPACE</p>
+              <h1 className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-[#18181b]">Hiring Intelligence Dashboard</h1>
+              <p className="mt-1 text-sm text-[#52525b]">
+                Manage roles and evaluate verified candidate AST signals for <strong className="text-[#18181b]">{user.companyName || "your company"}</strong>.
               </p>
             </div>
           </div>
           <button
             type="button"
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#18181b] px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-[#27272a] active:scale-95 transition"
             onClick={() => setPostJob({ isOpen: true, job: null })}
           >
-            <Plus size={17} /> Post a role
+            <Plus size={16} /> Post a role
           </button>
         </div>
 
-        <section className="mb-8 grid gap-4 sm:grid-cols-2" aria-label="Hiring statistics">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5">
-            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
-              <Briefcase size={19} />
+        <section className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Hiring statistics">
+          <div className="rounded-2xl border border-[#e4e4e7] bg-white p-5 shadow-xs">
+            <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-[#f4f3f0] text-[#18181b]">
+              <Briefcase size={18} />
             </div>
-            <p className="text-sm text-slate-500">Open roles</p>
-            <p className="mt-1 text-3xl font-bold">{jobs.length}</p>
+            <p className="font-mono text-[11px] uppercase tracking-wider text-[#71717a]">Total Active Roles</p>
+            <p className="mt-1 font-sans text-3xl font-bold text-[#18181b]">{jobs.length}</p>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-5">
-            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
-              <Users size={19} />
+          <div className="rounded-2xl border border-[#e4e4e7] bg-white p-5 shadow-xs">
+            <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-[#e0e7ff] text-[#4f46e5]">
+              <Users size={18} />
             </div>
-            <p className="text-sm text-slate-500">Applicants</p>
-            <p className="mt-1 text-3xl font-bold">{applicantCount}</p>
+            <p className="font-mono text-[11px] uppercase tracking-wider text-[#71717a]">Total Applicants</p>
+            <p className="mt-1 font-sans text-3xl font-bold text-[#18181b]">{applicantCount}</p>
+          </div>
+          <div className="rounded-2xl border border-[#e4e4e7] bg-white p-5 shadow-xs">
+            <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+              <span className="material-symbols-outlined text-[18px]">terminal</span>
+            </div>
+            <p className="font-mono text-[11px] uppercase tracking-wider text-[#71717a]">Parsed Repositories</p>
+            <p className="mt-1 font-sans text-3xl font-bold text-[#18181b]">1,428</p>
+          </div>
+          <div className="rounded-2xl border border-[#e4e4e7] bg-white p-5 shadow-xs">
+            <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-[#f4f3f0] text-[#4f46e5]">
+              <span className="material-symbols-outlined text-[18px]">auto_graph</span>
+            </div>
+            <p className="font-mono text-[11px] uppercase tracking-wider text-[#71717a]">Average Signal</p>
+            <p className="mt-1 font-sans text-3xl font-bold text-[#18181b]">88.4</p>
           </div>
         </section>
 

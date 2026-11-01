@@ -1,71 +1,140 @@
-import { Compass } from "lucide-react";
-function Footer() {
+export default function Footer() {
   return (
-    <footer className="site-footer">
-      <div className="site-footer-inner">
-        <div className="footer-top-grid">
-          <div className="footer-brand-column">
-            <a className="footer-brand" href="#home" aria-label="Northstar Home">
-              <span className="brand-icon-box">
-                <Compass size={20} strokeWidth={2.4} />
+    <footer className="w-full border-t border-[#e4e4e7]/80 bg-[#faf9f6] py-12 text-[#52525b]">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-4">
+          {/* Brand & Operational Status */}
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#18181b] font-mono text-xs font-bold text-[#c3c0ff] shadow-xs">
+                λ
+              </div>
+              <span className="font-sans text-[15px] font-semibold tracking-tight text-[#18181b]">
+                HireMe
               </span>
-              <span className="brand-name">
-                Hire-Me<span className="brand-accent-dot">.</span>
+              <span className="rounded border border-[#e4e4e7] bg-[#f4f3f0] px-1.5 py-0.2 font-mono text-[10px] font-medium text-[#52525b]">
+                signal
               </span>
-            </a>
-            <p className="footer-tagline">
-              Connecting exceptional builders, designers, and innovators with high-impact teams shaping tomorrow.
+            </div>
+            <p className="text-[13px] leading-relaxed text-[#71717a]">
+              Deterministic engineering telemetry. Evaluate deep AST craftsmanship, PR rigor, and real code architecture directly from candidate GitHub profiles.
             </p>
-            <div className="footer-status-pill">
-              <span className="pulse-dot-green" />
-              <span>All Systems Operational</span>
+            <div className="mt-1 flex items-center gap-2 text-[11px] font-mono text-emerald-600">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>All systems operational · v2.4</span>
             </div>
           </div>
 
-          <div className="footer-links-column">
-            <h4>For Candidates</h4>
-            <ul>
-              <li><a href="#open-roles">Browse All Jobs</a></li>
-              <li><a href="#categories">Search by Discipline</a></li>
-              <li><a href="#open-roles">Remote Opportunities</a></li>
-              <li><a href="#companies">Company Profiles</a></li>
+          {/* For Candidates */}
+          <div>
+            <h4 className="font-mono text-[11px] font-semibold uppercase tracking-wider text-[#18181b]">
+              For Candidates
+            </h4>
+            <ul className="mt-3 space-y-2 text-[13px]">
+              <li>
+                <a href="#catalog" className="transition-colors hover:text-[#18181b]">
+                  Explore Open Roles
+                </a>
+              </li>
+              <li>
+                <a href="#scanner" className="transition-colors hover:text-[#18181b]">
+                  Live Profile Scanner
+                </a>
+              </li>
+              <li>
+                <a href="#comparison" className="transition-colors hover:text-[#18181b]">
+                  Why Zero LeetCode
+                </a>
+              </li>
+              <li>
+                <a href="#catalog" className="transition-colors hover:text-[#18181b]">
+                  Remote Opportunities
+                </a>
+              </li>
             </ul>
           </div>
 
-          <div className="footer-links-column">
-            <h4>For Employers</h4>
-            <ul>
-              <li><a href="#home">Post a Role</a></li>
-              <li><a href="#home">Talent Matching API</a></li>
-              <li><a href="#home">Hiring Benchmarks</a></li>
-              <li><a href="#home">Recruiter Dashboard</a></li>
+          {/* For Engineering Leaders */}
+          <div>
+            <h4 className="font-mono text-[11px] font-semibold uppercase tracking-wider text-[#18181b]">
+              For Teams & Leaders
+            </h4>
+            <ul className="mt-3 space-y-2 text-[13px]">
+              <li>
+                <a href="#engine" className="transition-colors hover:text-[#18181b]">
+                  AST Telemetry Engine
+                </a>
+              </li>
+              <li>
+                <a href="#engine" className="transition-colors hover:text-[#18181b]">
+                  Ghost Commits & Bot Filter
+                </a>
+              </li>
+              <li>
+                <a href="#engine" className="transition-colors hover:text-[#18181b]">
+                  PR Review Rigor Analysis
+                </a>
+              </li>
+              <li>
+                <a href="#roadmap" className="transition-colors hover:text-[#18181b]">
+                  Community Roadmap
+                </a>
+              </li>
             </ul>
           </div>
 
-          <div className="footer-links-column">
-            <h4>Company</h4>
-            <ul>
-              <li><a href="#home">About Northstar</a></li>
-              <li><a href="#home">Privacy & Terms</a></li>
-              <li><a href="#home">Security</a></li>
-              <li><a href="#home">Contact Support</a></li>
+          {/* Trust & Compliance */}
+          <div>
+            <h4 className="font-mono text-[11px] font-semibold uppercase tracking-wider text-[#18181b]">
+              Trust & Compliance
+            </h4>
+            <ul className="mt-3 space-y-2 text-[13px]">
+              <li className="flex items-center gap-1.5 text-[#52525b]">
+                <span className="material-symbols-outlined text-[15px] text-[#4f46e5]">
+                  verified_user
+                </span>
+                <span>SOC-2 Type II Certified</span>
+              </li>
+              <li className="flex items-center gap-1.5 text-[#52525b]">
+                <span className="material-symbols-outlined text-[15px] text-[#4f46e5]">
+                  visibility
+                </span>
+                <span>Read-Only GitHub Repos</span>
+              </li>
+              <li className="flex items-center gap-1.5 text-[#52525b]">
+                <span className="material-symbols-outlined text-[15px] text-[#4f46e5]">
+                  security
+                </span>
+                <span>GDPR & CCPA Compliant</span>
+              </li>
+              <li className="flex items-center gap-1.5 text-[#52525b]">
+                <span className="material-symbols-outlined text-[15px] text-[#4f46e5]">
+                  lock
+                </span>
+                <span>Zero Code Retention</span>
+              </li>
             </ul>
           </div>
         </div>
 
-        <div className="footer-bottom-bar">
-          <p>© {new Date().getFullYear()} Northstar Technologies, Inc. All rights reserved.</p>
-          <div className="footer-bottom-links">
-            <a href="#home">Privacy Policy</a>
+        {/* Bottom Bar */}
+        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-[#e4e4e7]/60 pt-6 sm:flex-row text-[12px] text-[#71717a]">
+          <p>© {new Date().getFullYear()} HireMe Technologies, Inc. All rights reserved.</p>
+          <div className="flex items-center gap-4">
+            <a href="#terms" className="hover:text-[#18181b] transition-colors">
+              Terms of Service
+            </a>
             <span>·</span>
-            <a href="#home">Terms of Service</a>
+            <a href="#privacy" className="hover:text-[#18181b] transition-colors">
+              Privacy Policy
+            </a>
             <span>·</span>
-            <a href="#home">Security</a>
+            <a href="#security" className="hover:text-[#18181b] transition-colors">
+              Security Overview
+            </a>
           </div>
         </div>
       </div>
     </footer>
   );
 }
-
-export default Footer;

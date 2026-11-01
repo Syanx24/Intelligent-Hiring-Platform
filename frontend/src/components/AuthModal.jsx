@@ -2,14 +2,11 @@ import { useEffect, useState } from "react";
 import {
   ArrowRight,
   Briefcase,
-  Building2,
   CheckCircle2,
-  Compass,
-  Github,
-  Globe,
+  Code2,
   Lock,
   Mail,
-  Sparkles,
+  ShieldCheck,
   User,
   X,
 } from "lucide-react";
@@ -29,11 +26,6 @@ export default function AuthModal({
   const [error, setError] = useState("");
   const [validationErrors, setValidationErrors] = useState([]);
 
-  const clearErrors = () => {
-    setError("");
-    setValidationErrors([]);
-  };
-
   // Form Fields
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -42,6 +34,11 @@ export default function AuthModal({
   const [githubUrl, setGithubUrl] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [companyWebsite, setCompanyWebsite] = useState("");
+
+  const clearErrors = () => {
+    setError("");
+    setValidationErrors([]);
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -56,13 +53,28 @@ export default function AuthModal({
     }
   }, [initialError, initialMode, initialRole, isOpen]);
 
+  if (!isOpen) return null;
+
   const handleGithubLogin = () => {
     clearErrors();
     const backendUrl = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/$/, "");
     window.location.href = `${backendUrl}/api/auth/github?role=${role}`;
   };
 
-  if (!isOpen) return null;
+  const handleFillDemo = (type) => {
+    clearErrors();
+    if (type === "candidate") {
+      setRole("candidate");
+      setMode("login");
+      setEmail("candidate@example.com");
+      setPassword("password123");
+    } else {
+      setRole("company");
+      setMode("login");
+      setEmail("recruiter@example.com");
+      setPassword("password123");
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -85,7 +97,7 @@ export default function AuthModal({
         const res = await registerUser(payload);
         onAuthSuccess(
           res.user,
-          `Account created successfully! Welcome to Northstar, ${res.user.name}.`,
+          `Account created successfully! Welcome to HireMe, ${res.user.name}.`,
         );
         onClose();
       }
@@ -99,311 +111,300 @@ export default function AuthModal({
 
   return (
     <div
-      className="modal-backdrop-blur"
-      role="presentation"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4 backdrop-blur-sm transition-all"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="auth-modal-title"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div
-        className="modal-card-dialog auth-modal-box"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="auth-modal-title"
-      >
+      <div className="relative my-8 w-full max-w-[440px] overflow-hidden rounded-2xl border border-[#e4e4e7] bg-white p-6 sm:p-8 shadow-xl transition-all">
+        {/* Soft Ambient Glow */}
+        <div className="pointer-events-none absolute -top-16 left-1/2 -z-10 h-48 w-48 -translate-x-1/2 rounded-full bg-[#4f46e5]/10 blur-3xl" />
+
+        {/* Close Button */}
         <button
           type="button"
-          className="modal-close-icon"
           onClick={onClose}
-          aria-label="Close authentication modal"
+          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-[#71717a] transition-colors hover:bg-[#f4f3f0] hover:text-[#18181b]"
+          aria-label="Close dialog"
         >
-          <X size={20} />
+          <X size={18} />
         </button>
 
-        {/* Brand & Kicker */}
-        <div className="auth-head-center">
-          <div className="brand-icon-box mx-auto mb-3">
-            <Compass size={22} strokeWidth={2.4} />
+        {/* Brand Header */}
+        <div className="flex flex-col items-center text-center">
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#f4f3f0] border border-[#e4e4e7] shadow-xs">
+            <span className="font-mono text-xl font-bold text-[#18181b]">λ</span>
           </div>
-          <h2 id="auth-modal-title" className="auth-title">
-            {mode === "login" ? "Sign In to Northstar" : "Create Your Account"}
+          <h2 id="auth-modal-title" className="font-sans text-[22px] font-semibold tracking-tight text-[#18181b]">
+            {mode === "login" ? "Welcome to HireMe" : "Create HireMe Account"}
           </h2>
-          <p className="auth-subtitle">
-            {role === "candidate"
-              ? "Access tech opportunities, track applications & showcase verified code."
-              : "Post engineering roles, review verified candidates & hire faster."}
+          <p className="mt-1 text-[13px] leading-relaxed text-[#71717a] max-w-xs">
+            {role === "company"
+              ? "Access real-time GitHub candidate intelligence & telemetry."
+              : "Verify your engineering craftsmanship directly from GitHub."}
           </p>
         </div>
 
-        {/* Role Selector Tabs */}
-        <div className="auth-role-tabs">
+        {/* Role Segmented Switcher */}
+        <div className="mt-5 flex rounded-xl bg-[#f4f3f0] p-1 border border-[#e4e4e7]/60" role="tablist">
           <button
             type="button"
-            className={`auth-role-tab ${role === "candidate" ? "role-active" : ""}`}
-            onClick={() => {
-              setRole("candidate");
-              clearErrors();
-            }}
-          >
-            <User size={16} />
-            <span>Tech Candidate</span>
-          </button>
-          <button
-            type="button"
-            className={`auth-role-tab ${role === "company" ? "role-active" : ""}`}
+            role="tab"
+            aria-selected={role === "company"}
             onClick={() => {
               setRole("company");
               clearErrors();
             }}
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-[12px] font-medium transition-all ${
+              role === "company"
+                ? "bg-white text-[#18181b] shadow-xs font-semibold"
+                : "text-[#71717a] hover:text-[#18181b]"
+            }`}
           >
-            <Building2 size={16} />
-            <span>Recruiter</span>
+            <Briefcase size={14} className={role === "company" ? "text-[#4f46e5]" : ""} />
+            <span>Recruiter / Org</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={role === "candidate"}
+            onClick={() => {
+              setRole("candidate");
+              clearErrors();
+            }}
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-[12px] font-medium transition-all ${
+              role === "candidate"
+                ? "bg-white text-[#18181b] shadow-xs font-semibold"
+                : "text-[#71717a] hover:text-[#18181b]"
+            }`}
+          >
+            <Code2 size={14} className={role === "candidate" ? "text-[#4f46e5]" : ""} />
+            <span>Candidate</span>
           </button>
         </div>
 
-        {/* Mode Toggle (Login vs Register) */}
-        <div className="auth-mode-switch">
+        {/* GitHub OAuth Primary Action */}
+        <div className="mt-4 flex flex-col items-center">
           <button
             type="button"
-            className={`mode-btn ${mode === "login" ? "mode-active" : ""}`}
-            onClick={() => {
-              setMode("login");
-              clearErrors();
-            }}
-          >
-            Sign In
-          </button>
-          <button
-            type="button"
-            className={`mode-btn ${mode === "register" ? "mode-active" : ""}`}
-            onClick={() => {
-              setMode("register");
-              clearErrors();
-            }}
-          >
-            Register
-          </button>
-        </div>
-
-        {/* GitHub OAuth Button */}
-        <div className="auth-oauth-wrap">
-          <button
-            type="button"
-            id="btn-github-auth"
-            className="btn-github-oauth"
             onClick={handleGithubLogin}
-            disabled={loading}
+            className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#18181b] px-4 py-3 text-[13px] font-semibold text-white shadow-sm transition-all hover:bg-[#27272a] active:scale-[0.98]"
           >
-            <Github size={18} className="github-icon" />
-            <span>
-              {mode === "login"
-                ? `Continue with GitHub as ${role === "candidate" ? "Candidate" : "Recruiter"}`
-                : `Sign up with GitHub as ${role === "candidate" ? "Candidate" : "Recruiter"}`}
-            </span>
+            <svg aria-hidden="true" className="h-4 w-4 fill-current" viewBox="0 0 24 24">
+              <path
+                clipRule="evenodd"
+                d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+                fillRule="evenodd"
+              />
+            </svg>
+            <span>Continue with GitHub</span>
           </button>
-          <div className="auth-divider">
-            <span>or continue with email</span>
-          </div>
+          <span className="mt-1.5 font-mono text-[11px] text-[#71717a]">
+            Instant verification · Zero code storage
+          </span>
         </div>
 
-        {/* Form Body */}
-        <form className="auth-form" onSubmit={handleSubmit}>
-          {(error || validationErrors.length > 0) && (
-            <div className="form-alert-error" role="alert">
-              {error && <p>{error}</p>}
-              {validationErrors.length > 0 && (
-                <ul className="list-disc space-y-1 pl-5">
-                  {validationErrors.map((item) => <li key={item}>{item}</li>)}
-                </ul>
-              )}
-            </div>
-          )}
+        {/* Minimalist Divider */}
+        <div className="relative my-4 flex items-center justify-center">
+          <div className="w-full border-t border-[#e4e4e7]" />
+          <span className="absolute bg-white px-3 font-mono text-[10px] uppercase tracking-wider text-[#71717a]">
+            or continue with email
+          </span>
+        </div>
 
+        {/* Error Feedback */}
+        {error && (
+          <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-2.5 text-[12px] text-red-700">
+            {error}
+          </div>
+        )}
+        {validationErrors.length > 0 && (
+          <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-2.5 text-[12px] text-red-700">
+            <ul className="list-inside list-disc space-y-1">
+              {validationErrors.map((err, idx) => (
+                <li key={idx}>{err.msg || err.message}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Form Inputs */}
+        <form onSubmit={handleSubmit} className="space-y-3">
           {mode === "register" && (
-            <div className="form-group">
-              <label className="field-label" htmlFor="auth-name">
-                {role === "candidate" ? "Full Name" : "Your Name / Recruiter Name"} *
+            <div>
+              <label className="block text-[12px] font-medium text-[#18181b] mb-1" htmlFor="auth-name">
+                Full Name
               </label>
-              <div className="input-with-icon">
-                <User size={17} className="input-icon" />
+              <div className="relative flex items-center">
+                <User size={15} className="absolute left-3 text-[#71717a]" />
                 <input
                   id="auth-name"
                   type="text"
-                  placeholder={role === "candidate" ? "e.g. Elena Vance" : "e.g. Sarah Jenkins"}
+                  required
+                  placeholder="e.g. Alex Rivera"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  required
-                  className="form-input-text with-icon"
+                  className="w-full rounded-xl border border-[#e4e4e7] bg-[#f4f3f0] py-2.5 pl-9 pr-3 text-[13px] text-[#18181b] outline-none transition-all placeholder:text-[#a1a1aa] focus:border-[#4f46e5] focus:bg-white"
                 />
               </div>
             </div>
           )}
 
-          {mode === "register" && role === "company" && (
-            <>
-              <div className="form-group">
-                <label className="field-label" htmlFor="auth-company-name">
-                  Company Name *
-                </label>
-                <div className="input-with-icon">
-                  <Building2 size={17} className="input-icon" />
-                  <input
-                    id="auth-company-name"
-                    type="text"
-                    placeholder="e.g. Stripe, Linear, Vercel"
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    required
-                    className="form-input-text with-icon"
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="field-label" htmlFor="auth-company-web">
-                  Company Website URL
-                </label>
-                <div className="input-with-icon">
-                  <Globe size={17} className="input-icon" />
-                  <input
-                    id="auth-company-web"
-                    type="url"
-                    placeholder="https://company.com"
-                    value={companyWebsite}
-                    onChange={(e) => setCompanyWebsite(e.target.value)}
-                    className="form-input-text with-icon"
-                  />
-                </div>
-              </div>
-            </>
-          )}
-
-          {mode === "register" && role === "candidate" && (
-            <>
-              <div className="form-group">
-                <label className="field-label" htmlFor="auth-headline">
-                  Engineering Title / Headline
-                </label>
-                <div className="input-with-icon">
-                  <Briefcase size={17} className="input-icon" />
-                  <input
-                    id="auth-headline"
-                    type="text"
-                    placeholder="e.g. Senior Distributed Systems Engineer (Go/Rust)"
-                    value={headline}
-                    onChange={(e) => setHeadline(e.target.value)}
-                    className="form-input-text with-icon"
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="field-label" htmlFor="auth-github">
-                  GitHub Profile Link <span className="text-emerald-600 font-semibold">(Recommended)</span>
-                </label>
-                <div className="input-with-icon">
-                  <Github size={17} className="input-icon" />
-                  <input
-                    id="auth-github"
-                    type="url"
-                    placeholder="https://github.com/username"
-                    value={githubUrl}
-                    onChange={(e) => setGithubUrl(e.target.value)}
-                    className="form-input-text with-icon"
-                  />
-                </div>
-              </div>
-            </>
-          )}
-
-          <div className="form-group">
-            <label className="field-label" htmlFor="auth-email">
-              {role === "company" ? "Work Email Address" : "Email Address"} *
+          <div>
+            <label className="block text-[12px] font-medium text-[#18181b] mb-1" htmlFor="auth-email">
+              {role === "company" ? "Work Email" : "Email Address"}
             </label>
-            <div className="input-with-icon">
-              <Mail size={17} className="input-icon" />
+            <div className="relative flex items-center">
+              <Mail size={15} className="absolute left-3 text-[#71717a]" />
               <input
                 id="auth-email"
                 type="email"
-                autoComplete="email"
-                placeholder={role === "company" ? "sarah@company.com" : "elena@example.com"}
+                required
+                placeholder={role === "company" ? "recruiter@company.com" : "developer@example.com"}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                required
-                className="form-input-text with-icon"
+                className="w-full rounded-xl border border-[#e4e4e7] bg-[#f4f3f0] py-2.5 pl-9 pr-3 text-[13px] text-[#18181b] outline-none transition-all placeholder:text-[#a1a1aa] focus:border-[#4f46e5] focus:bg-white"
               />
             </div>
           </div>
 
-          <div className="form-group">
-            <label className="field-label" htmlFor="auth-password">
-              Password {mode === "register" && "(6+ chars, uppercase, lowercase, number, special character)"} *
+          <div>
+            <label className="block text-[12px] font-medium text-[#18181b] mb-1" htmlFor="auth-password">
+              Password
             </label>
-            <div className="input-with-icon">
-              <Lock size={17} className="input-icon" />
+            <div className="relative flex items-center">
+              <Lock size={15} className="absolute left-3 text-[#71717a]" />
               <input
                 id="auth-password"
                 type="password"
-                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                required
+                minLength={6}
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                className="form-input-text with-icon"
+                className="w-full rounded-xl border border-[#e4e4e7] bg-[#f4f3f0] py-2.5 pl-9 pr-3 text-[13px] text-[#18181b] outline-none transition-all placeholder:text-[#a1a1aa] focus:border-[#4f46e5] focus:bg-white"
               />
             </div>
           </div>
 
+          {mode === "register" && role === "candidate" && (
+            <div>
+              <label className="block text-[12px] font-medium text-[#18181b] mb-1" htmlFor="auth-headline">
+                Headline / Title
+              </label>
+              <input
+                id="auth-headline"
+                type="text"
+                placeholder="e.g. Senior Distributed Systems Engineer"
+                value={headline}
+                onChange={(e) => setHeadline(e.target.value)}
+                className="w-full rounded-xl border border-[#e4e4e7] bg-[#f4f3f0] px-3 py-2.5 text-[13px] text-[#18181b] outline-none transition-all placeholder:text-[#a1a1aa] focus:border-[#4f46e5] focus:bg-white"
+              />
+            </div>
+          )}
+
+          {mode === "register" && role === "company" && (
+            <div>
+              <label className="block text-[12px] font-medium text-[#18181b] mb-1" htmlFor="auth-company">
+                Organization / Company Name
+              </label>
+              <input
+                id="auth-company"
+                type="text"
+                required
+                placeholder="e.g. Monad Systems"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                className="w-full rounded-xl border border-[#e4e4e7] bg-[#f4f3f0] px-3 py-2.5 text-[13px] text-[#18181b] outline-none transition-all placeholder:text-[#a1a1aa] focus:border-[#4f46e5] focus:bg-white"
+              />
+            </div>
+          )}
+
+          {/* Submit Action */}
           <button
             type="submit"
-            className="btn-submit-apply mt-3"
             disabled={loading}
+            className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#4f46e5] py-3 text-[13px] font-semibold text-white shadow-sm transition-all hover:bg-[#4338ca] active:scale-[0.98] disabled:opacity-50"
           >
-            <span>
-              {loading
-                ? mode === "login"
-                  ? "Authenticating..."
-                  : "Creating Account..."
-                : mode === "login"
-                ? `Sign In as ${role === "candidate" ? "Candidate" : "Recruiter"}`
-                : `Register as ${role === "candidate" ? "Candidate" : "Recruiter"}`}
-            </span>
-            <ArrowRight size={17} />
+            <span>{loading ? "Verifying..." : mode === "login" ? "Sign In with Password" : "Create Account"}</span>
+            {!loading && <ArrowRight size={14} />}
           </button>
-
-          <div className="auth-footer-toggle">
-            {mode === "login" ? (
-              <p>
-                Don't have an account yet?{" "}
-                <button
-                  type="button"
-                  className="link-switch"
-                  onClick={() => {
-                    setMode("register");
-                    clearErrors();
-                  }}
-                >
-                  Create one now
-                </button>
-              </p>
-            ) : (
-              <p>
-                Already have an account?{" "}
-                <button
-                  type="button"
-                  className="link-switch"
-                  onClick={() => {
-                    setMode("login");
-                    clearErrors();
-                  }}
-                >
-                  Sign in here
-                </button>
-              </p>
-            )}
-          </div>
         </form>
+
+        {/* Quick Demo Autofill Pills */}
+        <div className="mt-4 flex items-center justify-between border-t border-[#e4e4e7]/60 pt-3">
+          <span className="font-mono text-[10px] uppercase text-[#71717a]">Quick Demo:</span>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => handleFillDemo("candidate")}
+              className="rounded-md border border-[#e4e4e7] bg-[#f4f3f0] px-2 py-0.5 font-mono text-[11px] text-[#52525b] hover:bg-white hover:text-[#18181b]"
+            >
+              Candidate
+            </button>
+            <button
+              type="button"
+              onClick={() => handleFillDemo("company")}
+              className="rounded-md border border-[#e4e4e7] bg-[#f4f3f0] px-2 py-0.5 font-mono text-[11px] text-[#52525b] hover:bg-white hover:text-[#18181b]"
+            >
+              Recruiter
+            </button>
+          </div>
+        </div>
+
+        {/* Mode Switcher */}
+        <div className="mt-3 text-center">
+          <button
+            type="button"
+            onClick={() => {
+              setMode(mode === "login" ? "register" : "login");
+              clearErrors();
+            }}
+            className="text-[12px] text-[#52525b] hover:text-[#18181b]"
+          >
+            {mode === "login" ? (
+              <>
+                Need an account?{" "}
+                <span className="font-semibold text-[#4f46e5] underline underline-offset-2">Register here</span>
+              </>
+            ) : (
+              <>
+                Already have an account?{" "}
+                <span className="font-semibold text-[#4f46e5] underline underline-offset-2">Sign in</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Trust Badges */}
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-2 font-mono text-[11px] text-[#71717a]">
+          <span className="inline-flex items-center gap-1 rounded-full bg-[#f4f3f0] px-2.5 py-0.5 border border-[#e4e4e7]/50">
+            <ShieldCheck size={12} className="text-[#4f46e5]" /> SOC-2 Type II
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-[#f4f3f0] px-2.5 py-0.5 border border-[#e4e4e7]/50">
+            <CheckCircle2 size={12} className="text-[#4f46e5]" /> Read-only Repos
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-[#f4f3f0] px-2.5 py-0.5 border border-[#e4e4e7]/50">
+            <ShieldCheck size={12} className="text-[#4f46e5]" /> GDPR Compliant
+          </span>
+        </div>
+
+        {/* Live Pipeline Pulse Ticker */}
+        <div className="mt-4 flex items-center gap-2.5 rounded-xl border border-[#e4e4e7]/60 bg-[#f4f3f0] p-2.5">
+          <div className="relative flex h-2.5 w-2.5 shrink-0 items-center justify-center">
+            <span className="absolute h-full w-full animate-ping rounded-full bg-[#4f46e5] opacity-75" />
+            <span className="relative h-2 w-2 rounded-full bg-[#4f46e5]" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="font-mono text-[9px] uppercase tracking-wider text-[#71717a]">Live Pipeline Status</div>
+            <div className="truncate text-[11px] font-medium text-[#18181b]">
+              Indexing 14,280+ active open-source contributors
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
