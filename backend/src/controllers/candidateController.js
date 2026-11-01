@@ -10,6 +10,13 @@ export async function updateCandidateProfile(req, res, next) {
     const candidate = req.user;
     const body = req.body ?? {};
     if (typeof body.name === "string" && body.name.trim()) candidate.name = body.name.trim();
+    if (body.avatarUrl !== undefined) {
+      candidate.avatarUrl = String(body.avatarUrl).trim();
+      if (!candidate.avatarUrl) {
+        candidate.avatarData = undefined;
+        candidate.avatarFileName = "";
+      }
+    }
     if (body.headline !== undefined) candidate.headline = String(body.headline).trim();
     if (body.githubUrl !== undefined) candidate.githubUrl = String(body.githubUrl).trim();
     if (body.portfolioUrl !== undefined) candidate.portfolioUrl = String(body.portfolioUrl).trim();

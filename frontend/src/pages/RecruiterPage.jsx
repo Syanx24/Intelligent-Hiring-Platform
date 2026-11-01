@@ -119,10 +119,25 @@ export default function RecruiterPage() {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              className="hidden rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 sm:block"
+              className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 transition"
               onClick={() => setProfileOpen(true)}
+              title="Edit Company Profile & Logo"
             >
-              {user.companyName || user.name}
+              {user.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={user.companyName || user.name}
+                  className="h-6 w-6 rounded-lg object-cover border border-slate-200"
+                />
+              ) : (
+                <span
+                  className="flex h-6 w-6 items-center justify-center rounded-lg text-[10px] font-black text-white"
+                  style={{ backgroundColor: user.companyColor || "#059669" }}
+                >
+                  {(user.companyInitials || (user.companyName || user.name || "CO").slice(0, 2)).toUpperCase()}
+                </span>
+              )}
+              <span className="hidden sm:inline">{user.companyName || user.name}</span>
             </button>
             <button
               type="button"
@@ -137,12 +152,36 @@ export default function RecruiterPage() {
 
       <main className="mx-auto max-w-6xl px-5 py-10 sm:py-14">
         <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-          <div>
-            <p className="mb-2 text-sm font-semibold text-emerald-700">RECRUITER WORKSPACE</p>
-            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Your hiring dashboard</h1>
-            <p className="mt-2 text-slate-600">
-              Manage roles and review candidates for {user.companyName || "your company"}.
-            </p>
+          <div className="flex items-start gap-4">
+            {user.avatarUrl ? (
+              <div
+                onClick={() => setProfileOpen(true)}
+                className="relative group shrink-0 cursor-pointer"
+                title="Edit Company Logo & Profile"
+              >
+                <img
+                  src={user.avatarUrl}
+                  alt={user.companyName || user.name}
+                  className="h-16 w-16 rounded-2xl object-cover border-2 border-slate-200 shadow-sm"
+                />
+              </div>
+            ) : (
+              <div
+                onClick={() => setProfileOpen(true)}
+                className="flex h-16 w-16 items-center justify-center rounded-2xl text-xl font-black text-white shadow-sm shrink-0 cursor-pointer hover:opacity-90 transition"
+                style={{ backgroundColor: user.companyColor || "#059669" }}
+                title="Upload Company Logo"
+              >
+                {(user.companyInitials || (user.companyName || user.name || "CO").slice(0, 2)).toUpperCase()}
+              </div>
+            )}
+            <div>
+              <p className="mb-1 text-xs font-bold text-emerald-700 tracking-wider uppercase">RECRUITER WORKSPACE</p>
+              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Your hiring dashboard</h1>
+              <p className="mt-1 text-slate-600">
+                Manage roles and review candidates for <strong className="text-slate-900">{user.companyName || "your company"}</strong>.
+              </p>
+            </div>
           </div>
           <button
             type="button"

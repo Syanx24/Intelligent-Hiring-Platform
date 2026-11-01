@@ -91,12 +91,14 @@ export async function createJob(req, res, next) {
     const initials = companyInitials || req.user.companyInitials || companyName.slice(0, 4).toUpperCase();
     const color = companyColor || req.user.companyColor || "#059669";
     const loc = location || req.user.companyLocation || "Remote";
+    const avatar = req.body.companyAvatarUrl || req.user.avatarUrl || "";
 
-const job = await JobDetail.create({
+    const job = await JobDetail.create({
       title: title.trim(),
       company: companyName.trim(),
       companyInitials: initials.trim(),
       companyColor: color,
+      companyAvatarUrl: avatar.trim(),
       location: loc.trim(),
       workplace,
       type,
@@ -139,6 +141,7 @@ const job = await JobDetail.findById(req.params.id);
     if (body.company !== undefined) job.company = String(body.company).trim();
     if (body.companyInitials !== undefined) job.companyInitials = String(body.companyInitials).trim();
     if (body.companyColor !== undefined) job.companyColor = String(body.companyColor).trim();
+    if (body.companyAvatarUrl !== undefined) job.companyAvatarUrl = String(body.companyAvatarUrl).trim();
     if (body.location !== undefined) job.location = String(body.location).trim();
     if (body.workplace !== undefined) job.workplace = body.workplace;
     if (body.type !== undefined) job.type = body.type;

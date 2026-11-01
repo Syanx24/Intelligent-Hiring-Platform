@@ -20,6 +20,11 @@ import {
   uploadCandidateResume,
 } from "../controllers/candidateController.js";
 import {
+  removeAvatar,
+  streamAvatar,
+  uploadAvatar,
+} from "../controllers/avatarController.js";
+import {
   createJob,
   deleteJob,
   getJob,
@@ -66,7 +71,13 @@ router.put(
   authRequired,
   (req, res, next) => accountController(req, res, next, updateCandidateProfile, updateRecruiterProfile),
 );
+router.post("/auth/upload-avatar", authRequired, uploadAvatar);
+router.delete("/auth/avatar", authRequired, removeAvatar);
 router.post("/auth/upload-resume", authRequired, roleRequired("candidate"), uploadCandidateResume);
+
+// Public profile avatar streaming routes.
+router.get("/avatars/:role/:id", streamAvatar);
+router.get("/avatars/:id", streamAvatar);
 
 // Public job browsing and recruiter-only job management.
 // Keep the static recruiter path before the dynamic job ID route.

@@ -9,6 +9,9 @@ const recruiterSchema = new mongoose.Schema(
     authProvider: { type: String, enum: ["local", "github"], default: "local" },
     githubId: { type: String, sparse: true, default: undefined },
     avatarUrl: { type: String, trim: true, default: "" },
+    avatarFileName: { type: String, default: "", select: false },
+    avatarContentType: { type: String, default: "image/jpeg", select: false },
+    avatarData: { type: Buffer, select: false },
     companyName: { type: String, trim: true, default: "" },
     companyWebsite: { type: String, trim: true, default: "" },
     companyInitials: { type: String, trim: true, default: "" },
@@ -23,6 +26,9 @@ const recruiterSchema = new mongoose.Schema(
 recruiterSchema.methods.toSafeJSON = function toSafeJSON() {
   const recruiter = this.toObject();
   delete recruiter.password;
+  delete recruiter.avatarData;
+  delete recruiter.avatarFileName;
+  delete recruiter.avatarContentType;
   delete recruiter.__v;
   return recruiter;
 };

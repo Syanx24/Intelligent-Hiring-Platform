@@ -9,6 +9,13 @@ export async function updateRecruiterProfile(req, res, next) {
     const recruiter = req.user;
     const body = req.body ?? {};
     if (typeof body.name === "string" && body.name.trim()) recruiter.name = body.name.trim();
+    if (body.avatarUrl !== undefined) {
+      recruiter.avatarUrl = String(body.avatarUrl).trim();
+      if (!recruiter.avatarUrl) {
+        recruiter.avatarData = undefined;
+        recruiter.avatarFileName = "";
+      }
+    }
     if (typeof body.companyName === "string" && body.companyName.trim()) {
       recruiter.companyName = body.companyName.trim();
       recruiter.companyInitials = recruiter.companyName.slice(0, 4).toUpperCase();

@@ -9,6 +9,9 @@ const candidateSchema = new mongoose.Schema(
     authProvider: { type: String, enum: ["local", "github"], default: "local" },
     githubId: { type: String, sparse: true, default: undefined },
     avatarUrl: { type: String, trim: true, default: "" },
+    avatarFileName: { type: String, default: "", select: false },
+    avatarContentType: { type: String, default: "image/jpeg", select: false },
+    avatarData: { type: Buffer, select: false },
     githubUrl: { type: String, trim: true, default: "" },
     headline: { type: String, trim: true, default: "" },
     portfolioUrl: { type: String, trim: true, default: "" },
@@ -32,6 +35,9 @@ candidateSchema.methods.toSafeJSON = function toSafeJSON() {
   delete candidate.resumeFileName;
   delete candidate.resumeFileSize;
   delete candidate.resumeContentType;
+  delete candidate.avatarData;
+  delete candidate.avatarFileName;
+  delete candidate.avatarContentType;
   delete candidate.__v;
   return candidate;
 };

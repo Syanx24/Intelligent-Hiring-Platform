@@ -120,7 +120,7 @@ export async function getJobApplicants(req, res, next) {
     }
 
     const applicants = await Application.find({ job: jobId })
-      .populate("candidateUser", "headline githubUrl portfolioUrl skills bio experienceYears")
+      .populate("candidateUser", "name avatarUrl headline githubUrl portfolioUrl skills bio experienceYears")
       .sort({ createdAt: -1 });
 
     res.json({
