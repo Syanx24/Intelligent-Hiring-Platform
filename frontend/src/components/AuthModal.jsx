@@ -3,6 +3,8 @@ import {
   ArrowRight,
   Briefcase,
   Code2,
+  Eye,
+  EyeOff,
   Lock,
   Mail,
   User,
@@ -28,6 +30,7 @@ export default function AuthModal({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [headline, setHeadline] = useState("");
   const [githubUrl, setGithubUrl] = useState("");
   const [companyName, setCompanyName] = useState("");
@@ -264,14 +267,23 @@ export default function AuthModal({
               <Lock size={14} className="absolute left-3 text-[#71717a]" />
               <input
                 id="auth-password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 required
                 minLength={6}
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl border border-[#e4e4e7] bg-[#f4f3f0] py-2 pl-8 pr-3 text-[13px] text-[#18181b] outline-none transition-all placeholder:text-[#a1a1aa] focus:border-[#4f46e5] focus:bg-white"
+                className="w-full rounded-xl border border-[#e4e4e7] bg-[#f4f3f0] py-2 pl-8 pr-9 text-[13px] text-[#18181b] outline-none transition-all placeholder:text-[#a1a1aa] focus:border-[#4f46e5] focus:bg-white"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-2.5 flex items-center justify-center text-[#71717a] hover:text-[#18181b] transition-colors p-1"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
             </div>
           </div>
 

@@ -12,6 +12,7 @@ import {
   Compass,
   ExternalLink,
   Eye,
+  EyeOff,
   FileCheck2,
   FileText,
   Filter,
@@ -132,6 +133,7 @@ export default function CandidatePage({
   const [authMode, setAuthMode] = useState("login"); // "login" | "register"
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
+  const [showAuthPassword, setShowAuthPassword] = useState(false);
   const [authName, setAuthName] = useState("");
   const [authHeadline, setAuthHeadline] = useState("");
   const [authGithubUrl, setAuthGithubUrl] = useState("");
@@ -793,14 +795,23 @@ export default function CandidatePage({
                     <div className="relative flex items-center">
                       <Lock size={15} className="absolute left-3 text-slate-400 pointer-events-none" />
                       <input
-                        type="password"
+                        type={showAuthPassword ? "text" : "password"}
                         required
                         minLength={6}
                         value={authPassword}
                         onChange={(e) => setAuthPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition"
+                        className="w-full pl-9 pr-9 py-2 text-sm bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition"
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowAuthPassword((prev) => !prev)}
+                        className="absolute right-2.5 flex items-center justify-center text-slate-400 hover:text-slate-700 transition-colors p-1"
+                        aria-label={showAuthPassword ? "Hide password" : "Show password"}
+                        tabIndex={-1}
+                      >
+                        {showAuthPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                      </button>
                     </div>
                   </div>
 
