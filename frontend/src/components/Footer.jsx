@@ -61,18 +61,18 @@ export default function Footer() {
             </h4>
             <ul className="mt-3 space-y-2 text-[13px]">
               <li>
-                <a href="#engine" className="transition-colors hover:text-[#18181b]">
-                  AST Telemetry Engine
+                <a href="#scanner" className="transition-colors hover:text-[#18181b]">
+                  Repo Telemetry Scanner
                 </a>
               </li>
               <li>
-                <a href="#engine" className="transition-colors hover:text-[#18181b]">
-                  Ghost Commits & Bot Filter
+                <a href="#comparison" className="transition-colors hover:text-[#18181b]">
+                  Why Zero LeetCode
                 </a>
               </li>
               <li>
-                <a href="#engine" className="transition-colors hover:text-[#18181b]">
-                  PR Review Rigor Analysis
+                <a href="#catalog" className="transition-colors hover:text-[#18181b]">
+                  Verified Developer Roles
                 </a>
               </li>
               <li>

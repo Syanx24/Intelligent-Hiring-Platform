@@ -28,12 +28,6 @@ export default function Header({ onOpenAuth }) {
             Explore Roles
           </a>
           <a
-            href="#engine"
-            className="text-[13px] font-medium text-[#52525b] transition-colors hover:text-[#18181b]"
-          >
-            Signal Engine
-          </a>
-          <a
             href="#comparison"
             className="text-[13px] font-medium text-[#52525b] transition-colors hover:text-[#18181b]"
           >
