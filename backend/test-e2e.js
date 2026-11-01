@@ -49,6 +49,30 @@ async function runTests() {
   }
   console.log("✓ Candidate profile and skills updated successfully.");
 
+  // 2b. Candidate Upload Profile Photo
+  console.log("\n2b. Testing Candidate Profile Photo Upload & Streaming...");
+  const sample1x1Png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+  const candAvatarRes = await fetch(`${BASE_URL}/api/auth/upload-avatar`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${candToken}`,
+    },
+    body: JSON.stringify({
+      fileName: "profile.png",
+      fileData: sample1x1Png,
+    }),
+  });
+  const candAvatarData = await candAvatarRes.json();
+  if (!candAvatarRes.ok || !candAvatarData.avatarUrl) {
+    throw new Error(`Candidate avatar upload failed: ${JSON.stringify(candAvatarData)}`);
+  }
+  const candStreamRes = await fetch(`${BASE_URL}${candAvatarData.avatarUrl}`);
+  if (!candStreamRes.ok || !candStreamRes.headers.get("content-type")?.includes("image")) {
+    throw new Error(`Candidate avatar streaming failed: ${candStreamRes.status}`);
+  }
+  console.log("✓ Candidate profile photo uploaded and streamed successfully.");
+
   // 3. Company Register
   console.log("\n3. Testing Company Registration...");
   const compRegRes = await fetch(`${BASE_URL}/api/auth/register`, {
@@ -69,6 +93,29 @@ async function runTests() {
   }
   const compToken = compReg.token;
   console.log("✓ Company registered successfully with token and role separation.");
+
+  // 3b. Company Upload Logo / Profile Photo
+  console.log("\n3b. Testing Company Logo / Profile Photo Upload & Streaming...");
+  const compAvatarRes = await fetch(`${BASE_URL}/api/auth/upload-avatar`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${compToken}`,
+    },
+    body: JSON.stringify({
+      fileName: "logo.png",
+      fileData: sample1x1Png,
+    }),
+  });
+  const compAvatarData = await compAvatarRes.json();
+  if (!compAvatarRes.ok || !compAvatarData.avatarUrl) {
+    throw new Error(`Company avatar upload failed: ${JSON.stringify(compAvatarData)}`);
+  }
+  const compStreamRes = await fetch(`${BASE_URL}${compAvatarData.avatarUrl}`);
+  if (!compStreamRes.ok || !compStreamRes.headers.get("content-type")?.includes("image")) {
+    throw new Error(`Company avatar streaming failed: ${compStreamRes.status}`);
+  }
+  console.log("✓ Company profile photo/logo uploaded and streamed successfully.");
 
   // 4. Company Post Job
   console.log("\n4. Testing Company Job Creation...");

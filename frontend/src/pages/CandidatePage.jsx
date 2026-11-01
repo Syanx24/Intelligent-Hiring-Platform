@@ -12,6 +12,7 @@ import {
   Compass,
   ExternalLink,
   Eye,
+  EyeOff,
   FileCheck2,
   FileText,
   Filter,
@@ -22,10 +23,12 @@ import {
   Lock,
   Mail,
   MapPin,
+  Camera,
   Plus,
   RefreshCw,
   Search,
   Sparkles,
+  Trash2,
   UploadCloud,
   FileUp,
   User,
@@ -36,7 +39,9 @@ import {
 import {
   loginUser,
   registerUser,
+  removeProfileAvatar,
   updateUserProfile,
+  uploadProfileAvatar,
 } from "../service/authAPI.js";
 import { uploadCandidateResume } from "../service/candidate/candidateAPI.js";
 import { getJobs } from "../service/JobList/jobListAPI.js";
@@ -128,6 +133,7 @@ export default function CandidatePage({
   const [authMode, setAuthMode] = useState("login"); // "login" | "register"
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
+  const [showAuthPassword, setShowAuthPassword] = useState(false);
   const [authName, setAuthName] = useState("");
   const [authHeadline, setAuthHeadline] = useState("");
   const [authGithubUrl, setAuthGithubUrl] = useState("");
@@ -257,8 +263,22 @@ export default function CandidatePage({
         onUserUpdate(res.user, `Account registered! Welcome to Northstar, ${res.user.name}.`);
       }
     } catch (err) {
-      setAuthError(err.errors?.length ? "" : err.message || "Authentication failed. Please verify your credentials.");
-      setAuthValidationErrors(err.errors || []);
+      const errList = Array.isArray(err.errors) ? err.errors : [];
+      if (errList.length > 0) {
+        setAuthValidationErrors(
+          errList
+            .map((item) => (typeof item === "string" ? item : item?.msg || item?.message || String(item)))
+            .filter(Boolean),
+        );
+        setAuthError(
+          err.message && !err.message.toLowerCase().includes("please correct")
+            ? err.message
+            : "",
+        );
+      } else {
+        setAuthError(err.message || "Authentication failed. Please verify your credentials.");
+        setAuthValidationErrors([]);
+      }
     } finally {
       setAuthLoading(false);
     }
@@ -269,6 +289,85 @@ export default function CandidatePage({
     setAuthMode("login");
     setAuthEmail("dev.candidate@northstar.internal");
     setAuthPassword("Northstar@2026");
+  };
+
+  // Profile photo upload state (max 3MB image)
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
+  const [avatarSuccess, setAvatarSuccess] = useState("");
+  const [avatarDragActive, setAvatarDragActive] = useState(false);
+
+  // Handle Candidate Profile Photo Upload
+  const handleAvatarFileUpload = async (file) => {
+    if (!file) return;
+    setAvatarError("");
+    setAvatarSuccess("");
+
+    const isImage =
+      file.type.startsWith("image/") ||
+      /\.(jpe?g|png|webp|gif|svg)$/i.test(file.name);
+
+    if (!isImage) {
+      setAvatarError("Please select a valid image file (JPG, PNG, WEBP, GIF, or SVG).");
+      return;
+    }
+
+    const MAX_SIZE = 3 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+      setAvatarError(`Image size exceeds 3MB limit (selected: ${sizeMb} MB). Please choose a smaller photo.`);
+      return;
+    }
+
+    setAvatarUploading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const fileData = reader.result;
+          const res = await uploadProfileAvatar({
+            fileName: file.name,
+            fileData,
+          });
+          setAvatarSuccess("Profile photo updated successfully!");
+          if (onUserUpdate && res.user) {
+            onUserUpdate(res.user, "Profile photo updated successfully.");
+          }
+          setTimeout(() => setAvatarSuccess(""), 4500);
+        } catch (uploadErr) {
+          setAvatarError(uploadErr.message || "Failed to upload photo. Please try again.");
+        } finally {
+          setAvatarUploading(false);
+        }
+      };
+      reader.onerror = () => {
+        setAvatarError("Failed to read image file.");
+        setAvatarUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      setAvatarError(err.message || "Failed to process image file.");
+      setAvatarUploading(false);
+    }
+  };
+
+  const handleAvatarRemove = async () => {
+    if (!window.confirm("Are you sure you want to remove your profile photo?")) return;
+    setAvatarError("");
+    setAvatarSuccess("");
+    setAvatarUploading(true);
+    try {
+      const res = await removeProfileAvatar();
+      setAvatarSuccess("Profile photo removed.");
+      if (onUserUpdate && res.user) {
+        onUserUpdate(res.user, "Profile photo removed.");
+      }
+      setTimeout(() => setAvatarSuccess(""), 4500);
+    } catch (err) {
+      setAvatarError(err.message || "Could not remove profile photo.");
+    } finally {
+      setAvatarUploading(false);
+    }
   };
 
   // CV / Resume upload state (max 2MB PDF)
@@ -439,11 +538,12 @@ export default function CandidatePage({
   const profileCompletion = useMemo(() => {
     if (!user) return { score: 0, items: [] };
     const items = [
-      { label: "Account created", done: true, weight: 20 },
-      { label: "Engineering headline", done: Boolean(user.headline), weight: 20 },
+      { label: "Account created", done: true, weight: 15 },
+      { label: "Profile photo", done: Boolean(user.avatarUrl), weight: 15 },
+      { label: "Engineering headline", done: Boolean(user.headline), weight: 15 },
       { label: "GitHub profile link", done: Boolean(user.githubUrl), weight: 20 },
-      { label: "Technical skills tags", done: Boolean(user.skills && user.skills.length > 0), weight: 20 },
-      { label: "Resume link", done: Boolean(user.resumeUrl), weight: 10 },
+      { label: "Technical skills tags", done: Boolean(user.skills && user.skills.length > 0), weight: 15 },
+      { label: "Resume link", done: Boolean(user.resumeUrl), weight: 15 },
       { label: "Engineering bio", done: Boolean(user.bio), weight: 10 },
     ];
     const score = items.reduce((acc, curr) => (curr.done ? acc + curr.weight : acc), 0);
@@ -479,12 +579,14 @@ export default function CandidatePage({
             <button
               type="button"
               onClick={onNavigateHome}
-              className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-900 transition"
+              className="inline-flex items-center gap-2 text-xs font-semibold text-[#52525b] hover:text-[#18181b] transition"
             >
-              <Compass size={15} className="text-emerald-600" />
-              <span>Northstar Platform</span>
-              <span className="text-slate-300">/</span>
-              <span className="text-slate-800">Candidate Gateway</span>
+              <div className="flex h-5 w-5 items-center justify-center rounded-md bg-[#18181b] font-mono text-[10px] font-bold text-[#c3c0ff]">
+                λ
+              </div>
+              <span className="font-sans font-bold text-[#18181b]">HireMe</span>
+              <span className="text-[#a1a1aa]">/</span>
+              <span className="font-mono text-[#52525b]">Candidate Gateway</span>
             </button>
 
             <div className="flex items-center gap-3">
@@ -652,10 +754,12 @@ export default function CandidatePage({
                   <div className="mb-4 p-3 bg-rose-50 border border-rose-200/80 rounded-xl text-rose-700 text-xs flex items-center gap-2">
                     <AlertCircle size={15} className="shrink-0" />
                     <div>
-                      {authError && <p>{authError}</p>}
+                      {authError && <p className="font-semibold">{authError}</p>}
                       {authValidationErrors.length > 0 && (
                         <ul className="list-disc space-y-1 pl-4">
-                          {authValidationErrors.map((item) => <li key={item}>{item}</li>)}
+                          {authValidationErrors.map((item, idx) => (
+                            <li key={idx}>{typeof item === "string" ? item : item?.msg || item?.message || String(item)}</li>
+                          ))}
                         </ul>
                       )}
                     </div>
@@ -707,14 +811,23 @@ export default function CandidatePage({
                     <div className="relative flex items-center">
                       <Lock size={15} className="absolute left-3 text-slate-400 pointer-events-none" />
                       <input
-                        type="password"
+                        type={showAuthPassword ? "text" : "password"}
                         required
                         minLength={6}
                         value={authPassword}
                         onChange={(e) => setAuthPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition"
+                        className="w-full pl-9 pr-9 py-2 text-sm bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition"
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowAuthPassword((prev) => !prev)}
+                        className="absolute right-2.5 flex items-center justify-center text-slate-400 hover:text-slate-700 transition-colors p-1"
+                        aria-label={showAuthPassword ? "Hide password" : "Show password"}
+                        tabIndex={-1}
+                      >
+                        {showAuthPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                      </button>
                     </div>
                   </div>
 
@@ -804,13 +917,22 @@ export default function CandidatePage({
               <button
                 type="button"
                 onClick={onNavigateHome}
-                className="font-medium text-slate-500 hover:text-slate-900 transition flex items-center gap-1.5"
+                className="font-medium text-[#52525b] hover:text-[#18181b] transition flex items-center gap-1.5"
               >
-                <Compass size={14} className="text-emerald-600" />
-                <span>Public Site</span>
+                <div className="flex h-5 w-5 items-center justify-center rounded-md bg-[#18181b] font-mono text-[10px] font-bold text-[#c3c0ff]">
+                  λ
+                </div>
+                <span className="font-sans font-bold text-[#18181b]">HireMe</span>
               </button>
-              <span className="text-slate-300">/</span>
-              <span className="font-bold text-slate-900">Candidate Dashboard</span>
+              <span className="text-[#a1a1aa]">/</span>
+              {user.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={user.name || "Candidate"}
+                  className="w-5 h-5 rounded-full object-cover border border-emerald-400"
+                />
+              ) : null}
+              <span className="font-bold text-slate-900">{user.name || "Candidate Dashboard"}</span>
               <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Active Candidate
@@ -848,9 +970,34 @@ export default function CandidatePage({
 
             {/* Candidate Identity */}
             <div className="flex items-start sm:items-center gap-4 relative z-10">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#c4f042] text-slate-950 font-black text-xl flex items-center justify-center shrink-0 shadow-md">
-                {user.name ? user.name.slice(0, 2).toUpperCase() : "CD"}
-              </div>
+              {user.avatarUrl ? (
+                <div className="relative group shrink-0">
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.name || "Candidate"}
+                    className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover shrink-0 shadow-md border-2 border-emerald-500/50"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("profile")}
+                    className="absolute inset-0 bg-slate-950/60 text-white rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-[10px] font-bold backdrop-blur-2xs"
+                    title="Change profile photo"
+                  >
+                    <Camera size={15} />
+                  </button>
+                </div>
+              ) : (
+                <div
+                  onClick={() => setActiveTab("profile")}
+                  className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#c4f042] text-slate-950 font-black text-xl flex items-center justify-center shrink-0 shadow-md cursor-pointer hover:opacity-90 transition relative group"
+                  title="Upload profile photo"
+                >
+                  <span>{user.name ? user.name.slice(0, 2).toUpperCase() : "CD"}</span>
+                  <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-slate-900 border border-slate-700 text-white flex items-center justify-center">
+                    <Camera size={10} />
+                  </span>
+                </div>
+              )}
 
               <div className="space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
@@ -1464,6 +1611,122 @@ export default function CandidatePage({
                 <span>{profileSuccess}</span>
               </div>
             )}
+
+            {/* Profile Photo Uploader Section */}
+            <div className="p-5 bg-slate-50/80 border border-slate-200 rounded-2xl space-y-3.5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-800 uppercase tracking-wider">
+                    Profile Photo
+                  </label>
+                  <p className="text-[11px] text-slate-500">
+                    Upload your headshot or avatar visible to employers and recruiters.
+                  </p>
+                </div>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
+                  JPG, PNG, WEBP • MAX 3MB
+                </span>
+              </div>
+
+              {/* Photo alerts */}
+              {avatarError && (
+                <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-center gap-2">
+                  <AlertCircle size={14} className="shrink-0" />
+                  <span>{avatarError}</span>
+                </div>
+              )}
+              {avatarSuccess && (
+                <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs flex items-center gap-2">
+                  <CheckCircle2 size={14} className="shrink-0" />
+                  <span>{avatarSuccess}</span>
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                {/* Avatar Preview */}
+                <div className="relative group shrink-0">
+                  {user.avatarUrl ? (
+                    <img
+                      src={user.avatarUrl}
+                      alt={user.name || "Candidate"}
+                      className="w-20 h-20 rounded-2xl object-cover border-2 border-emerald-500/40 shadow-sm"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#c4f042] to-emerald-400 text-slate-950 font-black text-2xl flex items-center justify-center shadow-sm">
+                      {user.name ? user.name.slice(0, 2).toUpperCase() : "CD"}
+                    </div>
+                  )}
+                  {avatarUploading && (
+                    <div className="absolute inset-0 bg-white/80 rounded-2xl flex items-center justify-center backdrop-blur-2xs">
+                      <RefreshCw size={20} className="animate-spin text-emerald-600" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Dropzone & Actions */}
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setAvatarDragActive(true);
+                  }}
+                  onDragLeave={() => setAvatarDragActive(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setAvatarDragActive(false);
+                    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                      handleAvatarFileUpload(e.dataTransfer.files[0]);
+                    }
+                  }}
+                  onClick={() => document.getElementById("avatar-file-input")?.click()}
+                  className={`flex-1 w-full border-2 border-dashed rounded-xl p-3.5 text-center transition cursor-pointer ${
+                    avatarDragActive
+                      ? "border-emerald-500 bg-emerald-50/50"
+                      : "border-slate-300 hover:border-slate-400 bg-white"
+                  }`}
+                >
+                  <input
+                    id="avatar-file-input"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        handleAvatarFileUpload(e.target.files[0]);
+                      }
+                    }}
+                  />
+                  {avatarUploading ? (
+                    <div className="py-2 flex items-center justify-center gap-2 text-xs font-semibold text-emerald-700">
+                      <RefreshCw size={14} className="animate-spin" />
+                      <span>Uploading profile photo...</span>
+                    </div>
+                  ) : (
+                    <div className="py-1">
+                      <Camera size={20} className="mx-auto mb-1 text-slate-400" />
+                      <p className="text-xs font-bold text-slate-800">
+                        {user.avatarUrl ? "Click or drag to replace your photo" : "Click to upload or drag & drop your photo"}
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        High-resolution square headshots work best
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {user.avatarUrl && (
+                  <button
+                    type="button"
+                    onClick={handleAvatarRemove}
+                    disabled={avatarUploading}
+                    className="shrink-0 p-2 text-xs font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition flex items-center gap-1.5"
+                    title="Remove profile photo"
+                  >
+                    <Trash2 size={13} />
+                    <span className="hidden sm:inline">Remove</span>
+                  </button>
+                )}
+              </div>
+            </div>
 
             <form onSubmit={handleProfileSave} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

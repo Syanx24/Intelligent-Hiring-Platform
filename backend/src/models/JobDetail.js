@@ -6,6 +6,7 @@ const jobDetailSchema = new mongoose.Schema(
     company: { type: String, required: true, trim: true },
     companyInitials: { type: String, required: true, trim: true, maxlength: 6 },
     companyColor: { type: String, default: "#059669" },
+    companyAvatarUrl: { type: String, trim: true, default: "" },
     location: { type: String, required: true, trim: true },
     workplace: { type: String, enum: ["Remote", "Hybrid", "On-site"], default: "Hybrid" },
     type: { type: String, default: "Full-time" },

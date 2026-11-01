@@ -5,25 +5,38 @@
    ========================================================================== */
 
 :root {
-  --font-sans: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-serif: "Plus Jakarta Sans", sans-serif;
+  --font-sans: "Geist", "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-serif: "Geist", sans-serif;
   
-  /* Color Palette */
-  --bg-canvas: #f8faf9;
+  /* Stitch Quiet Intelligence Palette */
+  --bg-canvas: #faf9f6;
   --bg-card: #ffffff;
-  --bg-surface: #f1f5f3;
-  --bg-subtle: #eaf0ec;
+  --bg-surface: #f4f3f0;
+  --bg-subtle: #eeecea;
   
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #64748b;
-  --text-subtle: #94a3b8;
+  --text-primary: #18181b;
+  --text-secondary: #52525b;
+  --text-muted: #71717a;
+  --text-subtle: #a1a1aa;
   
-  --border-light: #e6ece8;
-  --border-medium: #d4ded7;
-  --border-focus: #10b981;
+  --border-light: #e4e4e7;
+  --border-medium: #d4d4d8;
+  --border-focus: #4f46e5;
   
-  /* Brand Emerald & Vibrant Accents */
+  /* Brand Indigo & Primary Stitch Accents */
+  --primary-deep: #3525cd;
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --primary-container: #4f46e5;
+  --primary-fixed: #e0e7ff;
+  --primary-light: #eef2ff;
+  
+  --secondary: #4648d4;
+  --secondary-container: #6063ee;
+  --secondary-fixed: #e1e0ff;
+  
+  /* Vibrant Accents */
   --emerald-600: #059669;
   --emerald-500: #10b981;
   --emerald-400: #34d399;
@@ -31,17 +44,34 @@
   --emerald-50: #ecfdf5;
   
   --accent-lime: #c4f042;
-  --accent-lime-hover: #b3df30;
-  
-  --dark-slate: #09121d;
-  --deep-forest: #091a13;
+  --dark-slate: #18181b;
   
   /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
-  --shadow-lg: 0 12px 24px -4px rgba(15, 23, 42, 0.08), 0 4px 6px -2px rgba(15, 23, 42, 0.04);
-  --shadow-xl: 0 20px 30px -6px rgba(15, 23, 42, 0.12), 0 8px 10px -4px rgba(15, 23, 42, 0.06);
-  --shadow-glow: 0 0 25px rgba(16, 185, 129, 0.22);
+  --shadow-xs: 0 1px 2px 0 rgba(24, 24, 27, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(24, 24, 27, 0.07), 0 1px 2px -1px rgba(24, 24, 27, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(24, 24, 27, 0.08), 0 2px 4px -2px rgba(24, 24, 27, 0.05);
+  --shadow-lg: 0 12px 24px -4px rgba(24, 24, 27, 0.08), 0 4px 6px -2px rgba(24, 24, 27, 0.04);
+  --shadow-xl: 0 20px 30px -6px rgba(24, 24, 27, 0.12), 0 8px 10px -4px rgba(24, 24, 27, 0.06);
+}
+
+.font-mono-metric {
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum";
+}
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  display: inline-block;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Global Reset & Base */
@@ -2866,6 +2896,71 @@ a {
   height: 2px;
   background: var(--emerald-600);
   border-radius: 2px;
+}
+
+/* GitHub OAuth Option */
+.auth-oauth-wrap {
+  margin-bottom: 6px;
+}
+
+.btn-github-oauth {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #0f172a;
+  color: #ffffff;
+  border: 1px solid #1e293b;
+  border-radius: 11px;
+  padding: 11px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+}
+
+.btn-github-oauth:hover:not(:disabled) {
+  background: #1e293b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+}
+
+.btn-github-oauth:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-github-oauth:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.github-icon {
+  flex-shrink: 0;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 16px 0 12px;
+  color: var(--text-subtle);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.auth-divider span {
+  padding: 0 12px;
 }
 
 .input-with-icon {

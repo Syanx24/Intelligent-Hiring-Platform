@@ -3,6 +3,7 @@ import {
   ArrowRight,
   Briefcase,
   Building2,
+  Camera,
   Check,
   CheckCircle2,
   Clock,
@@ -13,6 +14,7 @@ import {
   Globe,
   MapPin,
   Plus,
+  RefreshCw,
   Sparkles,
   Trash2,
   Users,
@@ -28,7 +30,11 @@ import {
   getJobApplicants,
   updateApplicationStatus,
 } from "../../service/application/jobApplicationAPI.js";
-import { updateUserProfile } from "../../service/authAPI.js";
+import {
+  removeProfileAvatar,
+  updateUserProfile,
+  uploadProfileAvatar,
+} from "../../service/authAPI.js";
 import { timeAgo } from "../candidate/jobUtils.jsx";
 
 const statusBadges = {
@@ -354,12 +360,25 @@ export function JobApplicantsModal({
               return (
                 <div key={app._id} className="applicant-review-card">
                   <div className="applicant-top-bar">
-                    <div>
-                      <h4 className="applicant-name">{app.name}</h4>
-                      <p className="applicant-email">{app.email}</p>
-                      {cand.headline && (
-                        <p className="applicant-headline">{cand.headline}</p>
+                    <div className="flex items-start gap-3">
+                      {cand.avatarUrl ? (
+                        <img
+                          src={cand.avatarUrl}
+                          alt={app.name}
+                          className="w-11 h-11 rounded-xl object-cover border border-slate-200 shrink-0 shadow-2xs"
+                        />
+                      ) : (
+                        <div className="w-11 h-11 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center shrink-0">
+                          {app.name ? app.name.slice(0, 2).toUpperCase() : "CA"}
+                        </div>
                       )}
+                      <div>
+                        <h4 className="applicant-name">{app.name}</h4>
+                        <p className="applicant-email">{app.email}</p>
+                        {cand.headline && (
+                          <p className="applicant-headline">{cand.headline}</p>
+                        )}
+                      </div>
                     </div>
 
                     <div className="status-selector-wrap">
@@ -745,6 +764,11 @@ export function CompanyProfileModal({
   const [companyLocation, setCompanyLocation] = useState(user?.companyLocation || "");
   const [companyColor, setCompanyColor] = useState(user?.companyColor || "#059669");
   const [companySize, setCompanySize] = useState(user?.companySize || "50-200");
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || "");
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarDragActive, setAvatarDragActive] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
+  const [avatarSuccess, setAvatarSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -757,10 +781,85 @@ export function CompanyProfileModal({
       setCompanyLocation(user.companyLocation || "");
       setCompanyColor(user.companyColor || "#059669");
       setCompanySize(user.companySize || "50-200");
+      setAvatarUrl(user.avatarUrl || "");
     }
   }, [user]);
 
   if (!isOpen) return null;
+
+  const handleAvatarFileUpload = async (file) => {
+    if (!file) return;
+    setAvatarError("");
+    setAvatarSuccess("");
+
+    const isImage =
+      file.type.startsWith("image/") ||
+      /\.(jpe?g|png|webp|gif|svg)$/i.test(file.name);
+
+    if (!isImage) {
+      setAvatarError("Please select a valid image file (JPG, PNG, WEBP, GIF, SVG).");
+      return;
+    }
+
+    const MAX_SIZE = 3 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+      setAvatarError(`Image size exceeds 3MB limit (selected: ${sizeMb} MB).`);
+      return;
+    }
+
+    setAvatarUploading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const fileData = reader.result;
+          const res = await uploadProfileAvatar({
+            fileName: file.name,
+            fileData,
+          });
+          setAvatarUrl(res.avatarUrl);
+          setAvatarSuccess("Profile photo / company logo updated!");
+          if (onProfileUpdated && res.user) {
+            onProfileUpdated(res.user);
+          }
+          setTimeout(() => setAvatarSuccess(""), 4000);
+        } catch (uploadErr) {
+          setAvatarError(uploadErr.message || "Failed to upload photo. Please try again.");
+        } finally {
+          setAvatarUploading(false);
+        }
+      };
+      reader.onerror = () => {
+        setAvatarError("Failed to read image file.");
+        setAvatarUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      setAvatarError(err.message || "Failed to process image file.");
+      setAvatarUploading(false);
+    }
+  };
+
+  const handleAvatarRemove = async () => {
+    if (!window.confirm("Remove company logo/photo?")) return;
+    setAvatarError("");
+    setAvatarSuccess("");
+    setAvatarUploading(true);
+    try {
+      const res = await removeProfileAvatar();
+      setAvatarUrl("");
+      setAvatarSuccess("Photo removed.");
+      if (onProfileUpdated && res.user) {
+        onProfileUpdated(res.user);
+      }
+      setTimeout(() => setAvatarSuccess(""), 4000);
+    } catch (err) {
+      setAvatarError(err.message || "Could not remove photo.");
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -776,6 +875,7 @@ export function CompanyProfileModal({
         companyLocation,
         companyColor,
         companySize,
+        avatarUrl,
       });
 
       setSuccess("Company profile updated successfully!");
@@ -827,6 +927,114 @@ export function CompanyProfileModal({
 
         {error && <div className="form-alert-error mb-4">{error}</div>}
         {success && <div className="status-pill-green mb-4">{success}</div>}
+
+        {/* Profile Photo / Company Logo Upload Section */}
+        <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl mb-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                Company Logo / Profile Photo
+              </label>
+              <p className="text-[11px] text-slate-500">
+                Shown on job postings, candidate applicant reviews, and dashboard.
+              </p>
+            </div>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
+              JPG, PNG, WEBP • MAX 3MB
+            </span>
+          </div>
+
+          {avatarError && <div className="form-alert-error text-xs p-2">{avatarError}</div>}
+          {avatarSuccess && <div className="status-pill-green text-xs p-2">{avatarSuccess}</div>}
+
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            {/* Logo Preview */}
+            <div className="relative group shrink-0">
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={companyName || "Company logo"}
+                  className="w-16 h-16 rounded-2xl object-cover border-2 border-slate-200 shadow-sm"
+                />
+              ) : (
+                <div
+                  className="w-16 h-16 rounded-2xl text-xl font-black text-white flex items-center justify-center shadow-sm"
+                  style={{ backgroundColor: companyColor || "#059669" }}
+                >
+                  {(companyName ? companyName.slice(0, 2) : "CO").toUpperCase()}
+                </div>
+              )}
+              {avatarUploading && (
+                <div className="absolute inset-0 bg-white/80 rounded-2xl flex items-center justify-center backdrop-blur-2xs">
+                  <RefreshCw size={18} className="animate-spin text-emerald-600" />
+                </div>
+              )}
+            </div>
+
+            {/* Dropzone */}
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setAvatarDragActive(true);
+              }}
+              onDragLeave={() => setAvatarDragActive(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setAvatarDragActive(false);
+                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                  handleAvatarFileUpload(e.dataTransfer.files[0]);
+                }
+              }}
+              onClick={() => document.getElementById("recruiter-avatar-input")?.click()}
+              className={`flex-1 w-full border-2 border-dashed rounded-xl p-3 text-center transition cursor-pointer ${
+                avatarDragActive
+                  ? "border-emerald-500 bg-emerald-50/50"
+                  : "border-slate-300 hover:border-slate-400 bg-white"
+              }`}
+            >
+              <input
+                id="recruiter-avatar-input"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    handleAvatarFileUpload(e.target.files[0]);
+                  }
+                }}
+              />
+              {avatarUploading ? (
+                <div className="py-1 flex items-center justify-center gap-2 text-xs font-semibold text-emerald-700">
+                  <RefreshCw size={14} className="animate-spin" />
+                  <span>Uploading logo...</span>
+                </div>
+              ) : (
+                <div className="py-0.5">
+                  <Camera size={18} className="mx-auto mb-1 text-slate-400" />
+                  <p className="text-xs font-bold text-slate-800">
+                    {avatarUrl ? "Click or drag to replace logo" : "Click to upload or drag & drop company logo"}
+                  </p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Clear square brand logos look best
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {avatarUrl && (
+              <button
+                type="button"
+                onClick={handleAvatarRemove}
+                disabled={avatarUploading}
+                className="shrink-0 p-2 text-xs font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition flex items-center gap-1.5"
+                title="Remove logo"
+              >
+                <Trash2 size={13} />
+                <span className="hidden sm:inline">Remove</span>
+              </button>
+            )}
+          </div>
+        </div>
 
         <form className="apply-form-fields" onSubmit={handleSave}>
           <div className="form-row-2col">
