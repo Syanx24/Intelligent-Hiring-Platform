@@ -12,6 +12,15 @@ import {
 } from "lucide-react";
 import { loginUser, registerUser } from "../service/authAPI.js";
 
+function getErrorMessage(item) {
+  if (!item) return "";
+  if (typeof item === "string") return item;
+  if (typeof item.msg === "string") return item.msg;
+  if (typeof item.message === "string") return item.message;
+  if (typeof item.error === "string") return item.error;
+  return String(item);
+}
+
 export default function AuthModal({
   isOpen,
   initialRole = "candidate",
@@ -46,7 +55,7 @@ export default function AuthModal({
       setRole(initialRole);
       setMode(initialMode);
       if (initialError) {
-        setError(initialError);
+        setError(getErrorMessage(initialError));
         setValidationErrors([]);
       } else {
         clearErrors();
@@ -103,8 +112,18 @@ export default function AuthModal({
         onClose();
       }
     } catch (err) {
-      setError(err.errors?.length ? "" : err.message || "Authentication failed.");
-      setValidationErrors(err.errors || []);
+      const errList = Array.isArray(err.errors) ? err.errors : [];
+      if (errList.length > 0) {
+        setValidationErrors(errList.map(getErrorMessage).filter(Boolean));
+        setError(
+          err.message && !err.message.toLowerCase().includes("please correct")
+            ? err.message
+            : "",
+        );
+      } else {
+        setError(err.message || "Authentication failed. Please check your credentials.");
+        setValidationErrors([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -204,18 +223,22 @@ export default function AuthModal({
         </div>
 
         {/* Error Feedback */}
-        {error && (
-          <div className="mb-2.5 rounded-lg border border-red-200 bg-red-50 p-2 text-[12px] text-red-700">
-            {error}
-          </div>
-        )}
-        {validationErrors.length > 0 && (
-          <div className="mb-2.5 rounded-lg border border-red-200 bg-red-50 p-2 text-[12px] text-red-700">
-            <ul className="list-inside list-disc space-y-0.5">
-              {validationErrors.map((err, idx) => (
-                <li key={idx}>{err.msg || err.message}</li>
-              ))}
-            </ul>
+        {(error || validationErrors.length > 0) && (
+          <div className="mb-2.5 rounded-xl border border-red-200 bg-red-50 p-2.5 text-[12px] text-red-700 shadow-2xs">
+            {error && (
+              <p className={`font-semibold ${validationErrors.length > 0 ? "mb-1" : ""}`}>
+                {error}
+              </p>
+            )}
+            {validationErrors.length > 0 && (
+              <ul className="list-inside list-disc space-y-1">
+                {validationErrors.map((msg, idx) => (
+                  <li key={idx} className="leading-snug">
+                    {msg}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
 

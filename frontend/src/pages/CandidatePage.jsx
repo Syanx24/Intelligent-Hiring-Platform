@@ -263,8 +263,22 @@ export default function CandidatePage({
         onUserUpdate(res.user, `Account registered! Welcome to Northstar, ${res.user.name}.`);
       }
     } catch (err) {
-      setAuthError(err.errors?.length ? "" : err.message || "Authentication failed. Please verify your credentials.");
-      setAuthValidationErrors(err.errors || []);
+      const errList = Array.isArray(err.errors) ? err.errors : [];
+      if (errList.length > 0) {
+        setAuthValidationErrors(
+          errList
+            .map((item) => (typeof item === "string" ? item : item?.msg || item?.message || String(item)))
+            .filter(Boolean),
+        );
+        setAuthError(
+          err.message && !err.message.toLowerCase().includes("please correct")
+            ? err.message
+            : "",
+        );
+      } else {
+        setAuthError(err.message || "Authentication failed. Please verify your credentials.");
+        setAuthValidationErrors([]);
+      }
     } finally {
       setAuthLoading(false);
     }
@@ -740,10 +754,12 @@ export default function CandidatePage({
                   <div className="mb-4 p-3 bg-rose-50 border border-rose-200/80 rounded-xl text-rose-700 text-xs flex items-center gap-2">
                     <AlertCircle size={15} className="shrink-0" />
                     <div>
-                      {authError && <p>{authError}</p>}
+                      {authError && <p className="font-semibold">{authError}</p>}
                       {authValidationErrors.length > 0 && (
                         <ul className="list-disc space-y-1 pl-4">
-                          {authValidationErrors.map((item) => <li key={item}>{item}</li>)}
+                          {authValidationErrors.map((item, idx) => (
+                            <li key={idx}>{typeof item === "string" ? item : item?.msg || item?.message || String(item)}</li>
+                          ))}
                         </ul>
                       )}
                     </div>
