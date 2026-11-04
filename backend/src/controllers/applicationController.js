@@ -134,6 +134,19 @@ export async function getJobApplicants(req, res, next) {
   }
 }
 
+export async function getCompanyApplications(req, res, next) {
+  try {
+    const jobs = await JobDetail.find({ companyUser: req.user._id }).select("_id title category");
+    const applications = await Application.find({ job: { $in: jobs.map((job) => job._id) } })
+      .populate("job", "title company location workplace category type")
+      .populate("candidateUser", "name avatarUrl headline githubUrl portfolioUrl skills bio experienceYears location")
+      .sort({ createdAt: -1 });
+    res.json(applications);
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function streamApplicationResume(req, res, next) {
   try {
     const { applicationId } = req.params;
@@ -173,7 +186,7 @@ export async function updateApplicationStatus(req, res, next) {
     const { id } = req.params;
     const { status } = req.body ?? {};
 
-    const validStatuses = ["Applied", "Under review", "Interviewing", "Accepted", "Rejected"];
+    const validStatuses = ["Applied", "Under review", "Interviewing", "Shortlisted", "Accepted", "Rejected"];
     if (!status || !validStatuses.includes(status)) {
       return res.status(400).json({
         message: `Status must be one of: ${validStatuses.join(", ")}`,

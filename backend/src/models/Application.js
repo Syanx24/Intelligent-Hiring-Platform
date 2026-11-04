@@ -14,7 +14,7 @@ const applicationSchema = new mongoose.Schema(
     message: { type: String, trim: true, maxlength: 2000, default: "" },
     status: {
       type: String,
-      enum: ["Applied", "Under review", "Interviewing", "Accepted", "Rejected", "New", "Reviewing", "Interview", "Hired"],
+      enum: ["Applied", "Under review", "Interviewing", "Shortlisted", "Accepted", "Rejected", "New", "Reviewing", "Interview", "Hired"],
       default: "Applied",
     },
   },

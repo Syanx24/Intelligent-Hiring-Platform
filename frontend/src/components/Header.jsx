@@ -1,72 +1,90 @@
-import { ArrowRight, Sparkles, Terminal } from "lucide-react";
+import { ArrowRight, Briefcase, LogOut, UserRound } from "lucide-react";
 
-export default function Header({ onOpenAuth }) {
+const candidateLinks = [
+  ["jobs", "Jobs"],
+  ["applications", "Applications"],
+  ["profile", "Profile"],
+];
+
+export default function Header({
+  page = "home",
+  user,
+  activeTab,
+  onTabChange,
+  onOpenAuth,
+  onLogout,
+  onProfileClick,
+  onRefresh,
+  syncing = false,
+  counts = {},
+}) {
+  const isCandidate = page === "candidate";
+  const isRecruiter = page === "recruiter";
+
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-[#e4e4e7]/80 bg-[#faf9f6]/90 backdrop-blur-md transition-all">
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
-        {/* Brand Mark */}
-        <a href="/" className="flex items-center gap-2.5 transition-transform active:scale-95" aria-label="HireMe Home">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#18181b] font-mono text-sm font-bold text-[#c3c0ff] shadow-sm">
-            <span>λ</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="font-sans text-[17px] font-semibold tracking-tight text-[#18181b]">
-              HireMe
-            </span>
-            <span className="rounded border border-[#e4e4e7] bg-[#f4f3f0] px-1.5 py-0.5 font-mono text-[10px] font-medium tracking-wide text-[#52525b]">
-              signal
-            </span>
-          </div>
+    <header className="site-header sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
+      <div className="site-header-inner mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
+        <a href="/" className="site-brand flex shrink-0 items-center gap-2.5" aria-label="HireMe home">
+          <span className="site-brand-mark grid h-9 w-9 place-items-center rounded-xl bg-slate-900 font-mono text-sm font-bold text-white">λ</span>
+          <span className="flex items-center gap-1.5 text-[17px] font-semibold tracking-tight text-slate-900">
+            HireMe <span className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] font-medium tracking-wide text-slate-600">signal</span>
+          </span>
         </a>
 
-        {/* Center Nav Links (Desktop) */}
-        <nav className="hidden items-center gap-7 md:flex" aria-label="Main Navigation">
-          <a
-            href="#catalog"
-            className="text-[13px] font-medium text-[#52525b] transition-colors hover:text-[#18181b]"
-          >
-            Explore Roles
-          </a>
-          <a
-            href="#comparison"
-            className="text-[13px] font-medium text-[#52525b] transition-colors hover:text-[#18181b]"
-          >
-            Why HireMe
-          </a>
-          <a
-            href="#roadmap"
-            className="text-[13px] font-medium text-[#52525b] transition-colors hover:text-[#18181b]"
-          >
-            Roadmap
-          </a>
+        <nav className={`site-header-nav items-center gap-1 ${isCandidate && user ? "flex min-w-0 flex-1 overflow-x-auto md:flex-none" : "hidden md:flex"}`} aria-label="Main navigation">
+          {isCandidate && user ? candidateLinks.map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              aria-current={activeTab === key ? "page" : undefined}
+              onClick={() => onTabChange?.(key)}
+              className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${activeTab === key ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
+            >{label}{Number.isFinite(counts[key]) && <span className="ml-1.5 rounded-full bg-white/80 px-1.5 py-0.5 text-[10px] text-slate-500">{counts[key]}</span>}</button>
+          )) : isRecruiter ? (
+            <span className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">Recruiter workspace</span>
+          ) : (
+            <>
+              <a href="/#catalog" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900">Explore roles</a>
+              {page === "home" && <>
+                <a href="/#comparison" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900">Why HireMe</a>
+                <a href="/#roadmap" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900">Roadmap</a>
+              </>}
+              <a href="/about" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900">About us</a>
+            </>
+          )}
         </nav>
 
-        {/* Right Status Pill & Auth Triggers */}
-        <div className="flex items-center gap-2.5 sm:gap-3">
-          {/* Engine Live Status Pill */}
-          <div className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-[#e4e4e7] bg-white px-2.5 py-1 font-mono text-[11px] text-[#52525b] shadow-xs">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[10px] font-medium text-[#18181b]">v2.4 Live · AST Engine</span>
-          </div>
-
-          {/* Employer Quick Action */}
-          <button
-            type="button"
-            onClick={() => onOpenAuth?.("company")}
-            className="hidden text-[12px] font-medium text-[#52525b] hover:text-[#18181b] sm:block px-2 py-1 transition-colors"
-          >
-            For Recruiters
-          </button>
-
-          {/* Primary Sign In Button */}
-          <button
-            type="button"
-            onClick={() => onOpenAuth?.("candidate")}
-            className="flex items-center gap-1.5 rounded-full bg-[#18181b] px-3.5 py-1.5 text-[12px] font-semibold text-white shadow-xs transition-all hover:bg-[#27272a] active:scale-95"
-          >
-            <span>Sign in</span>
-            <ArrowRight size={13} className="text-[#c3c0ff]" />
-          </button>
+        <div className="site-header-actions flex shrink-0 items-center gap-2">
+          {isCandidate && user && onRefresh && <button type="button" onClick={onRefresh} className="hidden rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 sm:inline-flex">{syncing ? "Syncing…" : "Sync data"}</button>}
+          {user ? (
+            <>
+              <button
+                type="button"
+                onClick={onProfileClick}
+                className="inline-flex max-w-52 items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                aria-label={isRecruiter ? "Edit company profile" : "Candidate profile"}
+              >
+                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-blue-50 text-blue-700">
+                  {isRecruiter ? <Briefcase size={15} /> : <UserRound size={15} />}
+                </span>
+                <span className="hidden truncate sm:block">{isRecruiter ? (user.companyName || user.name || "Company") : (user.name || "Candidate")}</span>
+              </button>
+              <button type="button" onClick={onLogout} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 hover:border-slate-300 hover:bg-slate-50" aria-label="Sign out">
+                <LogOut size={15} /><span className="hidden sm:inline">Sign out</span>
+              </button>
+            </>
+          ) : onOpenAuth ? (
+            <>
+              <button type="button" onClick={() => onOpenAuth("company")} className="hidden rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 sm:inline-flex">For recruiters</button>
+              <button type="button" onClick={() => onOpenAuth("candidate")} className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+                Sign in <ArrowRight size={15} />
+              </button>
+            </>
+          ) : (
+            <a href={isRecruiter ? "/" : "/#catalog"} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+              {isRecruiter ? "Back to home" : "Browse jobs"}<ArrowRight size={15} />
+            </a>
+          )}
         </div>
       </div>
     </header>

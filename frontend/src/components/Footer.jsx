@@ -32,22 +32,22 @@ export default function Footer() {
             </h4>
             <ul className="mt-3 space-y-2 text-[13px]">
               <li>
-                <a href="#catalog" className="transition-colors hover:text-[#18181b]">
+                <a href="/#catalog" className="transition-colors hover:text-[#18181b]">
                   Explore Open Roles
                 </a>
               </li>
               <li>
-                <a href="#scanner" className="transition-colors hover:text-[#18181b]">
+                <a href="/#scanner" className="transition-colors hover:text-[#18181b]">
                   Live Profile Scanner
                 </a>
               </li>
               <li>
-                <a href="#comparison" className="transition-colors hover:text-[#18181b]">
+                <a href="/#comparison" className="transition-colors hover:text-[#18181b]">
                   Why Zero LeetCode
                 </a>
               </li>
               <li>
-                <a href="#catalog" className="transition-colors hover:text-[#18181b]">
+                <a href="/#catalog" className="transition-colors hover:text-[#18181b]">
                   Remote Opportunities
                 </a>
               </li>
@@ -61,23 +61,28 @@ export default function Footer() {
             </h4>
             <ul className="mt-3 space-y-2 text-[13px]">
               <li>
-                <a href="#scanner" className="transition-colors hover:text-[#18181b]">
+                <a href="/#scanner" className="transition-colors hover:text-[#18181b]">
                   Repo Telemetry Scanner
                 </a>
               </li>
               <li>
-                <a href="#comparison" className="transition-colors hover:text-[#18181b]">
+                <a href="/#comparison" className="transition-colors hover:text-[#18181b]">
                   Why Zero LeetCode
                 </a>
               </li>
               <li>
-                <a href="#catalog" className="transition-colors hover:text-[#18181b]">
+                <a href="/#catalog" className="transition-colors hover:text-[#18181b]">
                   Verified Developer Roles
                 </a>
               </li>
               <li>
-                <a href="#roadmap" className="transition-colors hover:text-[#18181b]">
+                <a href="/#roadmap" className="transition-colors hover:text-[#18181b]">
                   Community Roadmap
+                </a>
+              </li>
+              <li>
+                <a href="/about" className="transition-colors hover:text-[#18181b]">
+                  About Us
                 </a>
               </li>
             </ul>

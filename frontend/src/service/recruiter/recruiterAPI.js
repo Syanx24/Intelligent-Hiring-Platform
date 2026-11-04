@@ -35,3 +35,11 @@ export function deleteCompanyJob(id) {
     "Could not delete job listing",
   );
 }
+
+export function getGithubScoreTestCase({ signal } = {}) {
+  return requestJson(
+    "/api/github-score/test-case",
+    { signal },
+    "Could not load the GitHub score demo",
+  );
+}

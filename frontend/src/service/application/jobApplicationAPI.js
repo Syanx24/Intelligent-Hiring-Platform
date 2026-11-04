@@ -28,6 +28,10 @@ export function getJobApplicants(jobId, { signal } = {}) {
   );
 }
 
+export function getCompanyApplications({ signal } = {}) {
+  return requestJson("/api/applications/company/all", { signal }, "Could not load applications");
+}
+
 export function updateApplicationStatus(applicationId, status) {
   return requestJson(
     `/api/applications/${encodeURIComponent(applicationId)}/status`,

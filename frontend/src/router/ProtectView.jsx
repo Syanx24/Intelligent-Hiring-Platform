@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { clearStoredAuth, getStoredUser } from "../service/apiClient.js";
 import { getCurrentUser } from "../service/authAPI.js";
+import Header from "../components/Header.jsx";
+import Footer from "../components/Footer.jsx";
 
 const roleRoutes = {
   candidate: "/candidate",
@@ -28,9 +30,13 @@ export default function ProtectView({ role, children }) {
 
   if (loading) {
     return (
-      <main className="grid min-h-screen place-items-center bg-slate-50 text-sm text-slate-500">
-        Loading workspace…
-      </main>
+      <div className="flex min-h-screen flex-col bg-slate-50">
+        <Header page={role === "candidate" ? "candidate-guest" : "recruiter"} />
+        <main className="grid flex-1 place-items-center text-sm text-slate-500">
+          Loading workspace…
+        </main>
+        <Footer />
+      </div>
     );
   }
 

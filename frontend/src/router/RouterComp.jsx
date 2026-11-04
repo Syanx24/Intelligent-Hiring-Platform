@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import CandidatePage from "../pages/CandidatePage.jsx";
+import AboutUsPage from "../pages/AboutUs.jsx";
 import NotFoundPage from "../pages/404Page.jsx";
 import LandingPage from "../pages/LandingPage.jsx";
 import RecruiterPage from "../pages/RecruiterPage.jsx";
@@ -10,6 +11,7 @@ export default function Router() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/about" element={<AboutUsPage />} />
         <Route
           path="/candidate"
           element={

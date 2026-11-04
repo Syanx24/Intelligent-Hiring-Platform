@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import Header from "../components/Header.jsx";
+import Footer from "../components/Footer.jsx";
 import {
   AlertCircle,
   ArrowRight,
@@ -123,7 +125,6 @@ const PIPELINE_STEPS = ["Applied", "Under Review", "Interviewing", "Offer / Deci
 export default function CandidatePage({
   user,
   onUserUpdate,
-  onNavigateHome,
   onLogout,
   onOpenGlobalJobModal,
 }) {
@@ -573,38 +574,7 @@ export default function CandidatePage({
   if (!isCandidate) {
     return (
       <div className="min-h-screen bg-[#fafbfc] text-[#0f172a] antialiased">
-        {/* Top Minimal Utility Bar */}
-        <div className="border-b border-slate-200/80 bg-white/70 backdrop-blur-md sticky top-0 z-30">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-            <button
-              type="button"
-              onClick={onNavigateHome}
-              className="inline-flex items-center gap-2 text-xs font-semibold text-[#52525b] hover:text-[#18181b] transition"
-            >
-              <div className="flex h-5 w-5 items-center justify-center rounded-md bg-[#18181b] font-mono text-[10px] font-bold text-[#c3c0ff]">
-                λ
-              </div>
-              <span className="font-sans font-bold text-[#18181b]">HireMe</span>
-              <span className="text-[#a1a1aa]">/</span>
-              <span className="font-mono text-[#52525b]">Candidate Gateway</span>
-            </button>
-
-            <div className="flex items-center gap-3">
-              <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-800 bg-emerald-50/90 border border-emerald-200/70 px-2.5 py-1 rounded-full">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Engineering Hiring Active
-              </span>
-              <button
-                type="button"
-                onClick={onNavigateHome}
-                className="text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
-              >
-                Browse Public Jobs →
-              </button>
-            </div>
-          </div>
-        </div>
-
+        <Header page={isCandidate ? "candidate" : "candidate-guest"} user={isCandidate ? user : undefined} onLogout={onLogout} />
         {/* Employer alert if logged in as company */}
         {user && user.role === "company" && (
           <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-6">
@@ -898,6 +868,7 @@ export default function CandidatePage({
             </div>
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -907,62 +878,10 @@ export default function CandidatePage({
      Minimalistic, high-density, professional layout for tech candidates
      ========================================================================= */
   return (
-    <div className="min-h-screen bg-[#fafbfc] text-[#0f172a] pb-24 antialiased">
-      {/* Top Dossier Subbar */}
-      <section className="bg-white border-b border-slate-200/90 pt-6 pb-6 px-4 sm:px-6">
-        <div className="max-w-6xl mx-auto space-y-6">
-          {/* Breadcrumb & Navigation Switcher */}
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-2 text-xs">
-              <button
-                type="button"
-                onClick={onNavigateHome}
-                className="font-medium text-[#52525b] hover:text-[#18181b] transition flex items-center gap-1.5"
-              >
-                <div className="flex h-5 w-5 items-center justify-center rounded-md bg-[#18181b] font-mono text-[10px] font-bold text-[#c3c0ff]">
-                  λ
-                </div>
-                <span className="font-sans font-bold text-[#18181b]">HireMe</span>
-              </button>
-              <span className="text-[#a1a1aa]">/</span>
-              {user.avatarUrl ? (
-                <img
-                  src={user.avatarUrl}
-                  alt={user.name || "Candidate"}
-                  className="w-5 h-5 rounded-full object-cover border border-emerald-400"
-                />
-              ) : null}
-              <span className="font-bold text-slate-900">{user.name || "Candidate Dashboard"}</span>
-              <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Active Candidate
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2.5">
-              <button
-                type="button"
-                onClick={() => {
-                  fetchPortalJobs();
-                  fetchPortalApplications();
-                }}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl transition"
-                title="Refresh listings and applications"
-              >
-                <RefreshCw size={12} className={jobsLoading || appsLoading ? "animate-spin" : ""} />
-                <span>Sync Data</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={onLogout}
-                className="inline-flex items-center gap-1 text-xs font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200/70 px-3 py-1.5 rounded-xl transition"
-              >
-                <span>Sign Out</span>
-              </button>
-            </div>
-          </div>
-
+    <div className="candidate-dashboard min-h-screen bg-[#fafbfc] text-[#0f172a] pb-24 antialiased">
+      <Header page="candidate" user={user} activeTab={activeTab} onTabChange={setActiveTab} onLogout={onLogout} onProfileClick={() => setActiveTab("profile")} onRefresh={() => { fetchPortalJobs(); fetchPortalApplications(); }} syncing={jobsLoading || appsLoading} counts={{ jobs: jobs.length, applications: applications.length }} />
+      <section className="bg-white border-b border-slate-200/90 px-4 py-6 sm:px-6">
+        <div className="mx-auto max-w-6xl">
           {/* Dossier Banner Card */}
           <div className="bg-slate-950 text-white p-6 sm:p-7 rounded-3xl border border-slate-800 shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
             {/* Subtle background glow */}
@@ -1116,67 +1035,6 @@ export default function CandidatePage({
 
       {/* Main Content Area */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-6">
-        {/* Navigation Tabs Bar */}
-        <div className="flex items-center gap-1.5 border-b border-slate-200/90 mb-6 overflow-x-auto pb-1">
-          <button
-            type="button"
-            onClick={() => setActiveTab("jobs")}
-            className={`inline-flex items-center gap-2 py-2.5 px-4 text-xs font-bold rounded-xl transition whitespace-nowrap ${
-              activeTab === "jobs"
-                ? "bg-slate-950 text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-            }`}
-          >
-            <Briefcase size={14} />
-            <span>Job Listings & Recommendations</span>
-            <span
-              className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
-                activeTab === "jobs" ? "bg-slate-800 text-slate-200" : "bg-slate-200 text-slate-700"
-              }`}
-            >
-              {jobs.length}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("applications")}
-            className={`inline-flex items-center gap-2 py-2.5 px-4 text-xs font-bold rounded-xl transition whitespace-nowrap ${
-              activeTab === "applications"
-                ? "bg-slate-950 text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-            }`}
-          >
-            <Layers size={14} />
-            <span>My Application Pipeline</span>
-            <span
-              className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
-                activeTab === "applications"
-                  ? "bg-emerald-500 text-slate-950"
-                  : "bg-emerald-100 text-emerald-800"
-              }`}
-            >
-              {applications.length}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("profile")}
-            className={`inline-flex items-center gap-2 py-2.5 px-4 text-xs font-bold rounded-xl transition whitespace-nowrap ${
-              activeTab === "profile"
-                ? "bg-slate-950 text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-            }`}
-          >
-            <User size={14} />
-            <span>Technical Dossier & Resume</span>
-            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-slate-200 text-slate-700">
-              {profileCompletion.score}%
-            </span>
-          </button>
-        </div>
-
         {/* ===================================================================
            TAB 1: JOB LISTINGS (Clean, Minimalist Card UI)
            =================================================================== */}
@@ -2028,6 +1886,7 @@ export default function CandidatePage({
           </section>
         )}
       </main>
+      <Footer />
 
       {/* Public Job Detail & Application Modals */}
       <JobDetailsModal
