@@ -38,7 +38,7 @@ import {
   updateRecruiterProfile,
 } from "../controllers/recruiterController.js";
 import { authRequired, optionalAuth, roleRequired } from "../middleware/auth.js";
-import { getGithubScoreTestCase } from "../controllers/githubScoreController.js";
+import { getGithubScoreTestCase, getMyGithubScore } from "../controllers/githubScoreController.js";
 import {
   createPlan,
   listPlans,
@@ -76,6 +76,7 @@ router.put(
 router.post("/auth/upload-avatar", authRequired, uploadAvatar);
 router.delete("/auth/avatar", authRequired, removeAvatar);
 router.post("/auth/upload-resume", authRequired, roleRequired("candidate"), uploadCandidateResume);
+router.get("/github-score/me", authRequired, roleRequired("candidate"), getMyGithubScore);
 
 // Public profile avatar streaming routes.
 router.get("/avatars/:role/:id", streamAvatar);

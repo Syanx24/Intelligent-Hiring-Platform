@@ -66,6 +66,24 @@ const jobs = await JobDetail.find({ companyUser: req.user._id }).sort({ createdA
 
 export async function createJob(req, res, next) {
   try {
+    const missingProfileFields = [
+      ["name", "full name"],
+      ["position", "position at company"],
+      ["avatarUrl", "personal profile photo"],
+      ["companyName", "company name"],
+      ["companyWebsite", "company website"],
+      ["companyLocation", "headquarters location"],
+      ["companySize", "company size"],
+      ["companyDescription", "company mission and culture"],
+    ]
+      .filter(([field]) => !String(req.user?.[field] || "").trim())
+      .map(([, label]) => label);
+    if (missingProfileFields.length) {
+      return res.status(400).json({
+        message: `Complete your recruiter profile before posting a job: ${missingProfileFields.join(", ")}.`,
+      });
+    }
+
     const {
       title,
       company,

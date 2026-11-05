@@ -9,7 +9,11 @@ const jobDetailSchema = new mongoose.Schema(
     companyAvatarUrl: { type: String, trim: true, default: "" },
     location: { type: String, required: true, trim: true },
     workplace: { type: String, enum: ["Remote", "Hybrid", "On-site"], default: "Hybrid" },
-    type: { type: String, default: "Full-time" },
+    type: {
+      type: String,
+      enum: ["Full-time", "Part-time", "Internship", "Contract", "Temporary"],
+      default: "Full-time",
+    },
     category: { type: String, required: true, trim: true },
     salary: { type: String, required: true, trim: true },
     description: { type: String, required: true },

@@ -20,11 +20,16 @@ export default function Header({
 }) {
   const isCandidate = page === "candidate";
   const isRecruiter = page === "recruiter";
+  const homeHref = user?.role === "company"
+    ? "/recruiter"
+    : user?.role === "candidate"
+      ? "/candidate"
+      : "/";
 
   return (
     <header className="site-header sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
       <div className="site-header-inner mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
-        <a href="/" className="site-brand flex shrink-0 items-center gap-2.5" aria-label="HireMe home">
+        <a href={homeHref} className="site-brand flex shrink-0 items-center gap-2.5" aria-label="HireMe home">
           <span className="site-brand-mark grid h-9 w-9 place-items-center rounded-xl bg-slate-900 font-mono text-sm font-bold text-white">λ</span>
           <span className="flex items-center gap-1.5 text-[17px] font-semibold tracking-tight text-slate-900">
             HireMe <span className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] font-medium tracking-wide text-slate-600">signal</span>
@@ -64,10 +69,12 @@ export default function Header({
                 className="inline-flex max-w-52 items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                 aria-label={isRecruiter ? "Edit company profile" : "Candidate profile"}
               >
-                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-blue-50 text-blue-700">
-                  {isRecruiter ? <Briefcase size={15} /> : <UserRound size={15} />}
+                <span className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-lg bg-blue-50 text-blue-700">
+                  {user.avatarUrl ? (
+                    <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
+                  ) : isRecruiter ? <Briefcase size={15} /> : <UserRound size={15} />}
                 </span>
-                <span className="hidden truncate sm:block">{isRecruiter ? (user.companyName || user.name || "Company") : (user.name || "Candidate")}</span>
+                <span className="hidden truncate sm:block">{isRecruiter ? "Profile" : (user.name || "Candidate")}</span>
               </button>
               <button type="button" onClick={onLogout} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 hover:border-slate-300 hover:bg-slate-50" aria-label="Sign out">
                 <LogOut size={15} /><span className="hidden sm:inline">Sign out</span>

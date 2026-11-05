@@ -16,12 +16,15 @@ import {
   getCompanyApplications,
   updateApplicationStatus,
 } from "../../service/application/jobApplicationAPI.js";
-import { getGithubScoreTestCase } from "../../service/recruiter/recruiterAPI.js";
 import {
   RecruiterFilter as FilterMenu,
   RecruiterSearch as SearchBox,
 } from "../../components/recruiter/RecruiterControls.jsx";
+import { updateCompanyJob } from "../../service/recruiter/recruiterAPI.js";
 import SidebarRecruiter from "../../components/recruiter/SidebarRecruiter.jsx";
+import { CiEdit } from "react-icons/ci";
+import { AiTwotoneDelete } from "react-icons/ai";
+import { FaDoorOpen, FaDoorClosed } from "react-icons/fa";
 
 const palette = ["#6f61ee", "#33b69a", "#f2a84a", "#e87587", "#84a8ef"];
 const statusColors = {
@@ -260,6 +263,10 @@ function Dashboard({ jobs, apps, onNavigate }) {
 export default function RecruiterWorkspace({
   jobs,
   loadingJobs,
+  onRefreshJobs,
+  onJobUpdated,
+  postJobNotice,
+  onDismissPostJobNotice,
   onPostJob,
   onEditJob,
   onDeleteJob,
@@ -274,11 +281,10 @@ export default function RecruiterWorkspace({
   const [filters, setFilters] = useState({});
   const [sort, setSort] = useState("newest");
   const [profile, setProfile] = useState(null);
+  const [updatingJobId, setUpdatingJobId] = useState("");
   const [compare, setCompare] = useState(null);
   const [selected, setSelected] = useState([]);
   const [appliedCompare, setAppliedCompare] = useState(false);
-  const [githubDemo, setGithubDemo] = useState(null);
-  const [githubDemoLoading, setGithubDemoLoading] = useState(false);
   const reload = () => {
     setLoading(true);
     getCompanyApplications()
@@ -296,7 +302,7 @@ export default function RecruiterWorkspace({
           const c = a.candidateUser || {};
           const text =
             `${a.name} ${a.job?.title || ""} ${c.headline || ""}`.toLowerCase();
-          if (query && !text.includes(query.toLowerCase())) return false;
+          if (query.trim() && !text.includes(query.trim().toLowerCase())) return false;
           if (filters.status && a.status !== filters.status) return false;
           if (
             filters.skill &&
@@ -333,10 +339,10 @@ export default function RecruiterWorkspace({
       jobs
         .filter((j) => {
           if (
-            query &&
-            !`${j.title} ${j.category}`
+            query.trim() &&
+            !`${j.title} ${j.category} ${j.location} ${j.workplace} ${j.type} ${(j.tags || []).join(" ")} ${j.description || ""}`
               .toLowerCase()
-              .includes(query.toLowerCase())
+              .includes(query.trim().toLowerCase())
           )
             return false;
           if (filters.status && j.status !== filters.status) return false;
@@ -377,14 +383,18 @@ export default function RecruiterWorkspace({
       setError(e.message || "Could not update status.");
     }
   };
-  const loadGithubDemo = async () => {
-    setGithubDemoLoading(true);
+  const toggleJobStatus = async (job) => {
+    const status = job.status === "Closed" ? "Active" : "Closed";
+    setUpdatingJobId(job._id);
+    setError("");
     try {
-      setGithubDemo(await getGithubScoreTestCase());
+      const result = await updateCompanyJob(job._id, { status });
+      const updatedJob = result.job || result;
+      onJobUpdated?.(updatedJob);
     } catch (e) {
-      setError(e.message || "Could not load the GitHub score demo.");
+      setError(e.message || `Could not ${status === "Closed" ? "close" : "reopen"} this job.`);
     } finally {
-      setGithubDemoLoading(false);
+      setUpdatingJobId("");
     }
   };
   const departments = [
@@ -434,6 +444,14 @@ export default function RecruiterWorkspace({
               </button>
             </div>
           )}
+          {postJobNotice && (
+            <div className="rw-error" role="alert">
+              {postJobNotice}
+              <button type="button" onClick={onDismissPostJobNotice} aria-label="Dismiss message">
+                <X size={14} />
+              </button>
+            </div>
+          )}
           {section === "Dashboard" && (
             <Dashboard jobs={jobs} apps={apps} onNavigate={navigateSection} />
           )}
@@ -445,12 +463,21 @@ export default function RecruiterWorkspace({
                   <h1>My jobs</h1>
                   <p>Keep your roles up to date and review every opening.</p>
                 </div>
-                <button className="rw-primary" onClick={() => onPostJob(null)}>
-                  + Post a role
-                </button>
+                <div className="flex gap-2">
+                  <button className="rw-button" onClick={onRefreshJobs} disabled={loadingJobs}>
+                    {loadingJobs ? "Refreshing…" : "Refresh"}
+                  </button>
+                  <button className="rw-primary" onClick={() => onPostJob(null)}>
+                    + Post a role
+                  </button>
+                </div>
               </div>
-              <div className="rw-toolbar">
-                <SearchBox value={query} onChange={setQuery} />
+              {jobs.length > 0 && <div className="rw-toolbar">
+                <SearchBox
+                  value={query}
+                  onChange={setQuery}
+                  placeholder="Search jobs by title, category, location, type, or skill..."
+                />
                 <FilterMenu
                   fields={[
                     {
@@ -493,8 +520,15 @@ export default function RecruiterWorkspace({
                   <option value="oldest">Oldest first</option>
                   <option value="name">Name A–Z</option>
                 </select>
-              </div>
-              <div className="rw-card rw-table-card">
+              </div>}
+              {jobs.length === 0 && !loadingJobs ? (
+                <div className="rw-card rw-empty-state">
+                  <Briefcase size={28} />
+                  <h2>No jobs posted yet</h2>
+                  <p>Add your first job to start receiving applications.</p>
+                  <button className="rw-primary" onClick={() => onPostJob(null)}>Add a job</button>
+                </div>
+              ) : <div className="rw-card rw-table-card">
                 <table className="rw-table">
                   <thead>
                     <tr>
@@ -524,28 +558,51 @@ export default function RecruiterWorkspace({
                           <StatusPill status={j.status || "Active"} />
                         </td>
                         <td>
-                          <button
-                            className="rw-link"
-                            onClick={() => onEditJob(j)}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            className="rw-danger-link"
-                            onClick={() => onDeleteJob(j)}
-                          >
-                            Delete
-                          </button>
+                          <div className="rw-job-actions">
+                            <button
+                              className="rw-link"
+                              onClick={() => onEditJob(j)}
+                              type="button"
+                              title={`Edit ${j.title}`}
+                              data-tooltip={`Edit ${j.title}`}
+                              data-tooltip-placement="top"
+                              aria-label={`Edit ${j.title}`}
+                            >
+                              <CiEdit size={20}/>
+                            </button>
+                            <button
+                              className="rw-danger-link"
+                              onClick={() => onDeleteJob(j)}
+                              type="button"
+                              title={`Delete ${j.title}`}
+                              data-tooltip={`Delete ${j.title}`}
+                              data-tooltip-placement="top"
+                              aria-label={`Delete ${j.title}`}
+                            >
+                              <AiTwotoneDelete size={20}/>
+                            </button>
+                            <button
+                              className="rw-link"
+                              onClick={() => toggleJobStatus(j)}
+                              type="button"
+                              disabled={updatingJobId === j._id}
+                              title={j.status === "Closed" ? "Reopen this job" : "Close this job"}
+                              data-tooltip={j.status === "Closed" ? "Reopen job" : "Close job"}
+                              aria-label={j.status === "Closed" ? `Reopen ${j.title}` : `Close ${j.title}`}
+                            >
+                              {j.status === "Closed" ? <FaDoorOpen size={20}/> : <FaDoorClosed size={20}/>}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
                 {loadingJobs && <p className="rw-empty">Loading jobs…</p>}
-                {!loadingJobs && !filteredJobs.length && (
+                {!loadingJobs && jobs.length > 0 && !filteredJobs.length && (
                   <p className="rw-empty">No roles match your filters.</p>
                 )}
-              </div>
+              </div>}
             </>
           )}
           {listSection && (
@@ -667,7 +724,6 @@ export default function RecruiterWorkspace({
                               className="rw-link"
                               onClick={() => {
                                 setProfile(a);
-                                setGithubDemo(null);
                               }}
                             >
                               Profile
@@ -748,14 +804,6 @@ export default function RecruiterWorkspace({
               </div>
               <div className="rw-profile-head-actions">
                 <button
-                  className="rw-button"
-                  onClick={loadGithubDemo}
-                  disabled={githubDemoLoading}
-                >
-                  <Github size={14} />
-                  {githubDemoLoading ? "Loading�" : "Sample score"}
-                </button>
-                <button
                   className="rw-button rw-compare-btn"
                   onClick={() => {
                     setCompare(profile);
@@ -773,26 +821,25 @@ export default function RecruiterWorkspace({
                 Applied {new Date(profile.createdAt).toLocaleDateString()}
               </span>
             </div>
-            {githubDemo && (
+            {profile.candidateUser?.githubScore && (
               <section className="rw-github-demo">
                 <div className="rw-github-demo-head">
                   <div>
                     <b>GitHub evidence score</b>
                     <small>
-                      Standalone test case � @{githubDemo.githubUsername}
+                      @{profile.candidateUser.githubScore.githubUsername} · {profile.candidateUser.githubScore.analysisVersion === "test-1.0" ? "test record" : "database score"}
                     </small>
                   </div>
                   <strong>
-                    {githubDemo.evaluation.evidenceScore}
+                    {profile.candidateUser.githubScore.evidenceScore}
                     <small>/100</small>
                   </strong>
                 </div>
-                <p>{githubDemo.note}</p>
                 <div className="rw-github-demo-metrics">
-                  {Object.entries(githubDemo.evaluation)
+                  {["projectEvidence", "technicalBreadth", "recentActivity", "collaborationEvidence", "originalProjectPortfolio"].map((key) => [key, profile.candidateUser.githubScore[key]])
                     .filter(
                       ([key, value]) =>
-                        key !== "evidenceScore" && value != null,
+                        value != null,
                     )
                     .map(([key, value]) => (
                       <div key={key}>

@@ -2,6 +2,20 @@ import mongoose from "mongoose";
 import Application from "../models/Application.js";
 import Candidate from "../models/Candidate.js";
 import JobDetail from "../models/JobDetail.js";
+import GithubAnalysis from "../models/githubScore.js";
+
+async function attachGithubScores(applications) {
+  const candidateIds = [...new Set(applications.map((application) => application.candidateUser?._id?.toString()).filter(Boolean))];
+  const scores = await GithubAnalysis.find({ candidateId: { $in: candidateIds } }).lean();
+  const scoreByCandidate = new Map(scores.map((score) => [String(score.candidateId), score]));
+  return applications.map((application) => {
+    const data = application.toObject();
+    if (data.candidateUser) {
+      data.candidateUser.githubScore = scoreByCandidate.get(String(data.candidateUser._id)) || null;
+    }
+    return data;
+  });
+}
 
 export async function createApplication(req, res, next) {
   try {
@@ -119,9 +133,10 @@ export async function getJobApplicants(req, res, next) {
       return res.status(403).json({ message: "You are not authorized to view applicants for this role." });
     }
 
-    const applicants = await Application.find({ job: jobId })
+    const applicantRecords = await Application.find({ job: jobId })
       .populate("candidateUser", "name avatarUrl headline githubUrl portfolioUrl skills bio experienceYears")
       .sort({ createdAt: -1 });
+    const applicants = await attachGithubScores(applicantRecords);
 
     res.json({
       jobTitle: job.title,
@@ -137,10 +152,11 @@ export async function getJobApplicants(req, res, next) {
 export async function getCompanyApplications(req, res, next) {
   try {
     const jobs = await JobDetail.find({ companyUser: req.user._id }).select("_id title category");
-    const applications = await Application.find({ job: { $in: jobs.map((job) => job._id) } })
+    const applicationRecords = await Application.find({ job: { $in: jobs.map((job) => job._id) } })
       .populate("job", "title company location workplace category type")
       .populate("candidateUser", "name avatarUrl headline githubUrl portfolioUrl skills bio experienceYears location")
       .sort({ createdAt: -1 });
+    const applications = await attachGithubScores(applicationRecords);
     res.json(applications);
   } catch (error) {
     next(error);

@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 import Candidate from "../models/Candidate.js";
+import { refreshGithubScore } from "./githubScoreController.js";
+import GithubAnalysis from "../models/githubScore.js";
 
 export function getCandidate(req, res) {
   res.json(req.user.toSafeJSON());
@@ -9,6 +11,7 @@ export async function updateCandidateProfile(req, res, next) {
   try {
     const candidate = req.user;
     const body = req.body ?? {};
+    const previousGithubUrl = candidate.githubUrl;
     if (typeof body.name === "string" && body.name.trim()) candidate.name = body.name.trim();
     if (body.avatarUrl !== undefined) {
       candidate.avatarUrl = String(body.avatarUrl).trim();
@@ -27,7 +30,11 @@ export async function updateCandidateProfile(req, res, next) {
     if (Array.isArray(body.skills)) candidate.skills = body.skills.map((skill) => String(skill).trim()).filter(Boolean);
 
     await candidate.save();
-    res.json({ message: "Profile updated successfully.", user: candidate.toSafeJSON() });
+    const existingGithubScore = await GithubAnalysis.findOne({ candidateId: candidate._id }).lean();
+    const githubScore = !candidate.githubUrl || candidate.githubUrl !== previousGithubUrl || !existingGithubScore || existingGithubScore.evidenceScore == null
+      ? await refreshGithubScore(candidate)
+      : existingGithubScore;
+    res.json({ message: "Profile updated successfully.", user: candidate.toSafeJSON(), githubScore });
   } catch (error) {
     next(error);
   }

@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 
-// Standalone fixture for previewing the recruiter UI. It is deliberately not
-// stored in MongoDB and has no candidateId.
+// Demo fixture for recruiter score previews. This is not a candidate record.
 export const githubScoreTestCase = Object.freeze({
   isDemo: true,
   githubUsername: "octocat",
@@ -29,14 +28,12 @@ const githubAnalysisSchema = new mongoose.Schema(
     },
     githubUsername: String,
     githubUrl: String,
-    evaluation: {
-      projectEvidence: { type: Number, default: null },
-      technicalBreadth: { type: Number, default: null },
-      recentActivity: { type: Number, default: null },
-      collaborationEvidence: { type: Number, default: null },
-      originalProjectPortfolio: { type: Number, default: null },
-      evidenceScore: { type: Number, default: null },
-    },
+    projectEvidence: { type: Number, default: null },
+    technicalBreadth: { type: Number, default: null },
+    recentActivity: { type: Number, default: null },
+    collaborationEvidence: { type: Number, default: null },
+    originalProjectPortfolio: { type: Number, default: null },
+    evidenceScore: { type: Number, default: null },
     status: {
       type: String,
       enum: ["pending", "completed", "failed"],

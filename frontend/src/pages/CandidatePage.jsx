@@ -45,7 +45,7 @@ import {
   updateUserProfile,
   uploadProfileAvatar,
 } from "../service/authAPI.js";
-import { uploadCandidateResume } from "../service/candidate/candidateAPI.js";
+import { getMyGithubScore, uploadCandidateResume } from "../service/candidate/candidateAPI.js";
 import { getJobs } from "../service/JobList/jobListAPI.js";
 import {
   getMyApplications,
@@ -183,6 +183,8 @@ export default function CandidatePage({
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [profileSuccess, setProfileSuccess] = useState("");
+  const [githubScore, setGithubScore] = useState(user?.githubScore || null);
+  const [githubScoreLoading, setGithubScoreLoading] = useState(false);
 
   // Sync profile form when user object updates
   useEffect(() => {
@@ -198,6 +200,15 @@ export default function CandidatePage({
       setSkillsList(user.skills || []);
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!isCandidate || activeTab !== "profile") return;
+    setGithubScoreLoading(true);
+    getMyGithubScore()
+      .then(setGithubScore)
+      .catch(() => setGithubScore(null))
+      .finally(() => setGithubScoreLoading(false));
+  }, [isCandidate, activeTab]);
 
   // Load jobs when candidate portal is active
   const fetchPortalJobs = async () => {
@@ -502,6 +513,7 @@ export default function CandidatePage({
       });
 
       onUserUpdate(updated, "Profile dossier saved.");
+      setGithubScore(updated.githubScore || null);
       setProfileSuccess("Your technical dossier has been updated.");
       setTimeout(() => setProfileSuccess(""), 4000);
     } catch (err) {
@@ -1470,6 +1482,28 @@ export default function CandidatePage({
               </div>
             )}
 
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between gap-4">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600">GitHub Score</p>
+                <p className="text-xs text-slate-500 mt-1">
+                  {githubScoreLoading ? "Loading score…" : !profileGithub.trim()
+                    ? "Add a GitHub profile link to generate your score."
+                    : githubScore?.status === "completed"
+                      ? "Based on public repository evidence."
+                      : githubScore?.status === "failed"
+                        ? githubScore.errorMessage || "Could not analyze this profile. Check the link and save again."
+                        : "Save your profile to generate a score."}
+                </p>
+              </div>
+              {!profileGithub.trim() ? (
+                <button type="button" onClick={() => document.getElementById("candidate-github-url")?.focus()} className="shrink-0 px-3 py-2 text-xs font-bold text-white bg-slate-900 rounded-xl hover:bg-slate-800">
+                  Add GitHub
+                </button>
+              ) : githubScore?.status === "completed" ? (
+                <span className="text-2xl font-black text-slate-950">{githubScore.evidenceScore ?? "—"}<span className="text-xs text-slate-500"> / 100</span></span>
+              ) : null}
+            </div>
+
             {/* Profile Photo Uploader Section */}
             <div className="p-5 bg-slate-50/80 border border-slate-200 rounded-2xl space-y-3.5">
               <div className="flex items-center justify-between">
@@ -1635,6 +1669,7 @@ export default function CandidatePage({
                   <div className="relative flex items-center">
                     <Github size={14} className="absolute left-3 text-slate-400 pointer-events-none" />
                     <input
+                      id="candidate-github-url"
                       type="url"
                       placeholder="https://github.com/username"
                       value={profileGithub}

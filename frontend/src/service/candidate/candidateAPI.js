@@ -13,3 +13,8 @@ export async function uploadCandidateResume({ fileName, fileData }) {
   if (data.user) setStoredAuth(getStoredToken(), data.user);
   return data;
 }
+
+export async function getMyGithubScore() {
+  const data = await requestJson("/api/github-score/me", {}, "Could not load GitHub score");
+  return data.score;
+}

@@ -3558,7 +3558,16 @@ a {
 .rw-tags i { padding: 5px 8px; font-size: 10px; }
 .rw-status { padding: 5px 9px; font-size: 10px; }
 .rw-link, .rw-danger-link, .rw-text-button { font-size: 11px; }
+.rw-job-actions { display: flex; align-items: center; gap: 10px; }
+.rw-job-actions button { position: relative; display: inline-flex; align-items: center; justify-content: center; min-width: 30px; min-height: 30px; border-radius: 6px; }
+.rw-job-actions button[data-tooltip]::after { content: attr(data-tooltip); position: absolute; z-index: 20; top: calc(100% + 5px); left: 50%; transform: translate(-50%, -3px); padding: 5px 8px; border-radius: 5px; background: #20232e; color: #fff; font-size: 10px; font-weight: 600; line-height: 1.3; white-space: nowrap; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .12s ease, transform .12s ease, visibility .12s ease; }
+.rw-job-actions button[data-tooltip-placement="top"]::after { top: auto; bottom: calc(100% + 5px); transform: translate(-50%, 3px); }
+.rw-job-actions button[data-tooltip]:hover::after, .rw-job-actions button[data-tooltip]:focus-visible::after { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
 .rw-empty { color: #687586; font-size: 12px; }
+.rw-empty-state { display: grid; justify-items: center; gap: 12px; padding: 48px 20px; text-align: center; }
+.rw-empty-state > svg { color: #315fce; }
+.rw-empty-state h2 { margin: 0; font-size: 16px; }
+.rw-empty-state p { margin: 0 0 4px; color: #687586; font-size: 12px; }
 .rw-profile-modal, .rw-compare-modal { border: 1px solid #e7ebef; border-radius: 14px; }
 .rw-profile-grid>div { background: #f7f8fa; }
 .rw-profile-grid small { font-size: 10px; }

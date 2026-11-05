@@ -19,6 +19,7 @@ import {
   getMyCompanyJobs,
 } from "../service/recruiter/recruiterAPI.js";
 import RecruiterWorkspace from "../features/recruiter/RecruiterWorkspace.jsx";
+import { getRecruiterProfileCompleteness } from "../utils/recruiterProfile.js";
 
 export default function RecruiterPage() {
   const navigate = useNavigate();
@@ -30,6 +31,7 @@ export default function RecruiterPage() {
   const [postJob, setPostJob] = useState({ isOpen: false, job: null });
   const [applicantsJob, setApplicantsJob] = useState(null);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [jobPostNotice, setJobPostNotice] = useState("");
 
   const loadJobs = useCallback(async () => {
     setLoadingJobs(true);
@@ -84,6 +86,15 @@ export default function RecruiterPage() {
     (total, job) => total + (job.applicantCount || 0),
     0,
   );
+  const profileComplete = getRecruiterProfileCompleteness(user).isComplete;
+  const openJobForm = (job = null) => {
+    if (!job && !profileComplete) {
+      setJobPostNotice("Complete your recruiter profile before posting a job. Open Profile in the header to finish the missing details.");
+      return;
+    }
+    setJobPostNotice("");
+    setPostJob({ isOpen: true, job });
+  };
 
   if (!user) {
     return (
@@ -114,8 +125,12 @@ export default function RecruiterPage() {
       <RecruiterWorkspace
         jobs={jobs}
         loadingJobs={loadingJobs}
+        onRefreshJobs={loadJobs}
+        onJobUpdated={(updatedJob) => setJobs((current) => current.map((job) => job._id === updatedJob._id ? updatedJob : job))}
+        postJobNotice={jobPostNotice}
+        onDismissPostJobNotice={() => setJobPostNotice("")}
         user={user}
-        onPostJob={(job) => setPostJob({ isOpen: true, job })}
+        onPostJob={openJobForm}
         onEditJob={(job) => setPostJob({ isOpen: true, job })}
         onDeleteJob={removeJob}
       />
@@ -274,7 +289,10 @@ export default function RecruiterPage() {
         isOpen={profileOpen}
         user={user}
         onClose={() => setProfileOpen(false)}
-        onProfileUpdated={setUser}
+        onProfileUpdated={(updatedUser) => {
+          setUser(updatedUser);
+          setJobPostNotice("");
+        }}
       />
     </div>
   );

@@ -57,7 +57,10 @@ export async function updateUserProfile(profileData) {
     },
     "Could not update profile",
   );
-  if (data.user) setStoredAuth(getStoredToken(), data.user);
+  if (data.user) {
+    data.user.githubScore = data.githubScore || null;
+    setStoredAuth(getStoredToken(), data.user);
+  }
   return data.user;
 }
 
