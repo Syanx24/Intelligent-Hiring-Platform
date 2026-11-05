@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   createApplication,
   getJobApplicants,
+  getCompanyApplications,
   getMyApplications,
   streamApplicationResume,
   updateApplicationStatus,
@@ -37,6 +38,7 @@ import {
   updateRecruiterProfile,
 } from "../controllers/recruiterController.js";
 import { authRequired, optionalAuth, roleRequired } from "../middleware/auth.js";
+import { getGithubScoreTestCase, getMyGithubScore } from "../controllers/githubScoreController.js";
 import {
   createPlan,
   listPlans,
@@ -74,6 +76,7 @@ router.put(
 router.post("/auth/upload-avatar", authRequired, uploadAvatar);
 router.delete("/auth/avatar", authRequired, removeAvatar);
 router.post("/auth/upload-resume", authRequired, roleRequired("candidate"), uploadCandidateResume);
+router.get("/github-score/me", authRequired, roleRequired("candidate"), getMyGithubScore);
 
 // Public profile avatar streaming routes.
 router.get("/avatars/:role/:id", streamAvatar);
@@ -92,7 +95,11 @@ router.get("/jobs/:id", getJob);
 router.post("/applications", optionalAuth, createApplication);
 router.get("/applications/candidate/my-applications", authRequired, roleRequired("candidate"), getMyApplications);
 router.get("/applications/company/job/:jobId", authRequired, roleRequired("company"), getJobApplicants);
+router.get("/applications/company/all", authRequired, roleRequired("company"), getCompanyApplications);
 router.patch("/applications/:id/status", authRequired, roleRequired("company"), updateApplicationStatus);
+
+// Recruiter-only standalone fixture for the GitHub score UI preview.
+router.get("/github-score/test-case", authRequired, roleRequired("company"), getGithubScoreTestCase);
 
 // Resume file streaming routes.
 router.get("/resumes/user/:candidateId", streamCandidateResume);

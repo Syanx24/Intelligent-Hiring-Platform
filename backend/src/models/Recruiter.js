@@ -8,6 +8,7 @@ const recruiterSchema = new mongoose.Schema(
     role: { type: String, enum: ["company"], default: "company", immutable: true },
     authProvider: { type: String, enum: ["local", "github"], default: "local" },
     githubId: { type: String, sparse: true, default: undefined },
+    position: { type: String, trim: true, default: "" },
     avatarUrl: { type: String, trim: true, default: "" },
     avatarFileName: { type: String, default: "", select: false },
     avatarContentType: { type: String, default: "image/jpeg", select: false },

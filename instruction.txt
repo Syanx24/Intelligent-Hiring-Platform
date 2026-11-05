@@ -9,4 +9,7 @@ git commit -m "what you change in-short" (make sure it valid)
 
 git push origin main (git clone add remote , don't worry)
 
-follow the instruction otherwise You're "GAY"
+
+Recruiter portal component prompt
+
+githubScore.js should called by python model after fetch github link

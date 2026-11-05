@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Briefcase, Building2, LogOut, MapPin, Plus, Users } from "lucide-react";
+import { Briefcase, Building2, MapPin, Plus, Users } from "lucide-react";
 import AuthModal from "../components/AuthModal.jsx";
 import Footer from "../components/Footer.jsx";
+import Header from "../components/Header.jsx";
 import {
   CompanyProfileModal,
   JobApplicantsModal,
@@ -17,6 +18,8 @@ import {
   deleteCompanyJob,
   getMyCompanyJobs,
 } from "../service/recruiter/recruiterAPI.js";
+import RecruiterWorkspace from "../features/recruiter/RecruiterWorkspace.jsx";
+import { getRecruiterProfileCompleteness } from "../utils/recruiterProfile.js";
 
 export default function RecruiterPage() {
   const navigate = useNavigate();
@@ -28,6 +31,7 @@ export default function RecruiterPage() {
   const [postJob, setPostJob] = useState({ isOpen: false, job: null });
   const [applicantsJob, setApplicantsJob] = useState(null);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [jobPostNotice, setJobPostNotice] = useState("");
 
   const loadJobs = useCallback(async () => {
     setLoadingJobs(true);
@@ -53,7 +57,13 @@ export default function RecruiterPage() {
   }, [loadJobs, user]);
 
   if (!sessionReady) {
-    return <div className="min-h-screen bg-slate-50" aria-label="Loading account" />;
+    return (
+      <div className="flex min-h-screen flex-col bg-slate-50" aria-label="Loading account">
+        <Header page="recruiter" />
+        <main className="grid flex-1 place-items-center text-sm text-slate-500">Loading account…</main>
+        <Footer />
+      </div>
+    );
   }
   if (user && user.role !== "company") return <Navigate to="/candidate" replace />;
 
@@ -76,18 +86,20 @@ export default function RecruiterPage() {
     (total, job) => total + (job.applicantCount || 0),
     0,
   );
+  const profileComplete = getRecruiterProfileCompleteness(user).isComplete;
+  const openJobForm = (job = null) => {
+    if (!job && !profileComplete) {
+      setJobPostNotice("Complete your recruiter profile before posting a job. Open Profile in the header to finish the missing details.");
+      return;
+    }
+    setJobPostNotice("");
+    setPostJob({ isOpen: true, job });
+  };
 
   if (!user) {
     return (
       <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
-        <header className="border-b border-slate-200 bg-white">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
-            <a href="/" className="font-bold tracking-tight">Hire-Me<span className="text-emerald-600">.</span></a>
-            <button type="button" className="text-sm font-medium text-slate-600 hover:text-slate-900" onClick={() => navigate("/")}>
-              Back to home
-            </button>
-          </div>
-        </header>
+        <Header page="recruiter" />
         <main className="mx-auto flex w-full max-w-6xl flex-1 items-center px-5 py-12">
           <div className="max-w-xl">
             <p className="text-sm font-semibold text-emerald-700">RECRUITER WORKSPACE</p>
@@ -108,52 +120,24 @@ export default function RecruiterPage() {
 
   return (
     <div className="min-h-screen bg-[#faf9f6] text-[#18181b]">
-      <header className="sticky top-0 z-40 border-b border-[#e4e4e7]/80 bg-[#faf9f6]/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
-          <a href="/" className="flex items-center gap-2.5 font-bold tracking-tight transition-transform active:scale-95" aria-label="HireMe home">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#18181b] font-mono text-sm font-bold text-[#c3c0ff] shadow-sm">
-              λ
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-sans text-[17px] font-semibold tracking-tight text-[#18181b]">HireMe</span>
-              <span className="rounded border border-[#e4e4e7] bg-[#f4f3f0] px-1.5 py-0.5 font-mono text-[10px] font-medium tracking-wide text-[#52525b]">signal</span>
-            </div>
-          </a>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              className="flex items-center gap-2 rounded-xl border border-[#e4e4e7] bg-white px-3 py-1.5 text-xs font-semibold text-[#18181b] shadow-xs hover:bg-[#f4f3f0] transition"
-              onClick={() => setProfileOpen(true)}
-              title="Edit Company Profile & Logo"
-            >
-              {user.avatarUrl ? (
-                <img
-                  src={user.avatarUrl}
-                  alt={user.companyName || user.name}
-                  className="h-6 w-6 rounded-lg object-cover border border-[#e4e4e7]"
-                />
-              ) : (
-                <span
-                  className="flex h-6 w-6 items-center justify-center rounded-lg text-[10px] font-black text-white"
-                  style={{ backgroundColor: user.companyColor || "#4f46e5" }}
-                >
-                  {(user.companyInitials || (user.companyName || user.name || "CO").slice(0, 2)).toUpperCase()}
-                </span>
-              )}
-              <span className="hidden sm:inline font-mono text-[12px]">{user.companyName || user.name}</span>
-            </button>
-            <button
-              type="button"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-[#e4e4e7] bg-white px-3 py-1.5 text-xs font-semibold text-[#52525b] hover:bg-[#f4f3f0] hover:text-[#18181b] transition"
-              onClick={signOut}
-            >
-              <LogOut size={14} /> Sign out
-            </button>
-          </div>
-        </div>
-      </header>
+      <Header page="recruiter" user={user} onLogout={signOut} onProfileClick={() => setProfileOpen(true)} />
 
-      <main className="mx-auto max-w-6xl px-5 py-8 sm:py-12">
+      <RecruiterWorkspace
+        jobs={jobs}
+        loadingJobs={loadingJobs}
+        onRefreshJobs={loadJobs}
+        onJobUpdated={(updatedJob) => setJobs((current) => current.map((job) => job._id === updatedJob._id ? updatedJob : job))}
+        postJobNotice={jobPostNotice}
+        onDismissPostJobNotice={() => setJobPostNotice("")}
+        user={user}
+        onPostJob={openJobForm}
+        onEditJob={(job) => setPostJob({ isOpen: true, job })}
+        onDeleteJob={removeJob}
+      />
+      <Footer />
+      {/* Recruiter workspace owns dashboard and hiring pipeline navigation. */}
+      {/* Existing role and company dialogs remain shared with the original job flow. */}
+      <div className="hidden">
         <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div className="flex items-start gap-4">
             {user.avatarUrl ? (
@@ -285,7 +269,7 @@ export default function RecruiterPage() {
             </div>
           )}
         </section>
-      </main>
+      </div>
 
       <PostJobModal
         isOpen={postJob.isOpen}
@@ -305,7 +289,10 @@ export default function RecruiterPage() {
         isOpen={profileOpen}
         user={user}
         onClose={() => setProfileOpen(false)}
-        onProfileUpdated={setUser}
+        onProfileUpdated={(updatedUser) => {
+          setUser(updatedUser);
+          setJobPostNotice("");
+        }}
       />
     </div>
   );

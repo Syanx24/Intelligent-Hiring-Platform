@@ -6,12 +6,7 @@ import teamMembers from "../Data/teamMembers.json";
 export default function AboutUsPage() {
   return (
     <div className="site-shell min-h-screen w-full overflow-x-hidden bg-[#f7f8f4] text-[#20221e]">
-      <Header
-        onExplore={() => {
-          window.location.href = "/#open-roles";
-        }}
-        onNotice={() => {}}
-      />
+      <Header page="info" />
       <main className="section-wrap mx-auto min-h-[65vh] w-[90%] max-w-[1160px] py-20">
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {teamMembers.map((member) => (

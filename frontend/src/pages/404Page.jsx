@@ -4,7 +4,7 @@ import Footer from "../components/Footer.jsx";
 export default function NotFoundPage() {
   return (
     <div className="site-shell min-h-screen w-full overflow-x-hidden bg-[#f7f8f4] text-[#20221e]">
-      <Header onExplore={() => { window.location.href = "/#open-roles"; }} onNotice={() => {}} />
+      <Header page="info" />
       <main className="section-wrap mx-auto flex min-h-[65vh] w-[90%] max-w-[1160px] flex-col items-center justify-center py-16 text-center">
         <span className="section-kicker">404 · PAGE NOT FOUND</span>
         <h1 className="mt-4 text-4xl font-semibold tracking-tight">This page isn’t here.</h1>

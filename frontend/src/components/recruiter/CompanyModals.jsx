@@ -35,6 +35,7 @@ import {
   updateUserProfile,
   uploadProfileAvatar,
 } from "../../service/authAPI.js";
+import { getRecruiterProfileCompleteness } from "../../utils/recruiterProfile.js";
 import { timeAgo } from "../candidate/jobUtils.jsx";
 
 const statusBadges = {
@@ -486,38 +487,35 @@ export function PostJobModal({
   onJobSaved,
 }) {
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("Engineering");
-  const [workplace, setWorkplace] = useState("Remote");
-  const [type, setType] = useState("Full-time");
+  const [category, setCategory] = useState("");
+  const [workplace, setWorkplace] = useState("");
+  const [type, setType] = useState("");
   const [salary, setSalary] = useState("");
-  const [location, setLocation] = useState("Remote, Global");
+  const [location, setLocation] = useState("");
   const [tagsText, setTagsText] = useState("");
   const [description, setDescription] = useState("");
-  const [featured, setFeatured] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (jobToEdit) {
       setTitle(jobToEdit.title || "");
-      setCategory(jobToEdit.category || "Engineering");
-      setWorkplace(jobToEdit.workplace || "Remote");
-      setType(jobToEdit.type || "Full-time");
+      setCategory(jobToEdit.category || "");
+      setWorkplace(jobToEdit.workplace || "");
+      setType(jobToEdit.type || "");
       setSalary(jobToEdit.salary || "");
       setLocation(jobToEdit.location || "Remote");
       setTagsText((jobToEdit.tags || []).join(", "));
       setDescription(jobToEdit.description || "");
-      setFeatured(Boolean(jobToEdit.featured));
     } else {
       setTitle("");
-      setCategory("Engineering");
-      setWorkplace("Remote");
-      setType("Full-time");
-      setSalary("$160k – $210k");
-      setLocation("Remote, Global");
-      setTagsText("Go, Raft, Distributed Systems, Kafka");
+      setCategory("");
+      setWorkplace("");
+      setType("");
+      setSalary("");
+      setLocation("");
+      setTagsText("");
       setDescription("");
-      setFeatured(false);
     }
     setError("");
   }, [jobToEdit, isOpen]);
@@ -544,7 +542,6 @@ export function PostJobModal({
         location,
         tags,
         description,
-        featured,
       };
 
       let result;
@@ -626,7 +623,9 @@ export function PostJobModal({
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 className="form-input-text"
+                required
               >
+                <option value="" disabled>Select a category</option>
                 <option value="Engineering">Engineering</option>
                 <option value="Product">Product</option>
                 <option value="Design">Design</option>
@@ -642,12 +641,32 @@ export function PostJobModal({
                 value={workplace}
                 onChange={(e) => setWorkplace(e.target.value)}
                 className="form-input-text"
+                required
               >
+                <option value="" disabled>Select a workplace</option>
                 <option value="Remote">Remote</option>
                 <option value="Hybrid">Hybrid</option>
                 <option value="On-site">On-site</option>
               </select>
             </div>
+          </div>
+
+          <div className="form-group">
+            <label className="field-label" htmlFor="job-type-select">Employment Type *</label>
+            <select
+              id="job-type-select"
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+              className="form-input-text"
+              required
+            >
+              <option value="" disabled>Select an employment type</option>
+              <option value="Full-time">Full-time</option>
+              <option value="Part-time">Part-time</option>
+              <option value="Internship">Internship</option>
+              <option value="Contract">Contract</option>
+              <option value="Temporary">Temporary</option>
+            </select>
           </div>
 
           <div className="form-row-2col">
@@ -711,19 +730,6 @@ export function PostJobModal({
             />
           </div>
 
-          <div className="flex items-center gap-2 mt-1">
-            <input
-              id="job-featured-check"
-              type="checkbox"
-              checked={featured}
-              onChange={(e) => setFeatured(e.target.checked)}
-              className="h-4 w-4 rounded accent-emerald-600"
-            />
-            <label htmlFor="job-featured-check" className="text-sm font-medium text-slate-700 cursor-pointer">
-              Mark as Featured / Staff Priority Role
-            </label>
-          </div>
-
           <div className="modal-btns-group mt-4">
             <button
               type="button"
@@ -758,12 +764,13 @@ export function CompanyProfileModal({
   onClose,
   onProfileUpdated,
 }) {
+  const [name, setName] = useState(user?.name || "");
+  const [position, setPosition] = useState(user?.position || "");
   const [companyName, setCompanyName] = useState(user?.companyName || user?.name || "");
   const [companyWebsite, setCompanyWebsite] = useState(user?.companyWebsite || "");
   const [companyDescription, setCompanyDescription] = useState(user?.companyDescription || "");
   const [companyLocation, setCompanyLocation] = useState(user?.companyLocation || "");
-  const [companyColor, setCompanyColor] = useState(user?.companyColor || "#059669");
-  const [companySize, setCompanySize] = useState(user?.companySize || "50-200");
+  const [companySize, setCompanySize] = useState(user?.companySize || "");
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || "");
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarDragActive, setAvatarDragActive] = useState(false);
@@ -775,17 +782,29 @@ export function CompanyProfileModal({
 
   useEffect(() => {
     if (user) {
+      setName(user.name || "");
+      setPosition(user.position || "");
       setCompanyName(user.companyName || user.name || "");
       setCompanyWebsite(user.companyWebsite || "");
       setCompanyDescription(user.companyDescription || "");
       setCompanyLocation(user.companyLocation || "");
-      setCompanyColor(user.companyColor || "#059669");
-      setCompanySize(user.companySize || "50-200");
+      setCompanySize(user.companySize || "");
       setAvatarUrl(user.avatarUrl || "");
     }
   }, [user]);
 
   if (!isOpen) return null;
+
+  const profileCompleteness = getRecruiterProfileCompleteness({
+    name,
+    position,
+    avatarUrl,
+    companyName,
+    companyWebsite,
+    companyLocation,
+    companySize,
+    companyDescription,
+  });
 
   const handleAvatarFileUpload = async (file) => {
     if (!file) return;
@@ -869,11 +888,12 @@ export function CompanyProfileModal({
 
     try {
       const updated = await updateUserProfile({
+        name,
+        position,
         companyName,
         companyWebsite,
         companyDescription,
         companyLocation,
-        companyColor,
         companySize,
         avatarUrl,
       });
@@ -915,12 +935,12 @@ export function CompanyProfileModal({
 
         <div className="modal-head-row">
           <div className="modal-company-info">
-            <span className="modal-kicker-badge">EMPLOYER BRANDING</span>
+            <span className="modal-kicker-badge">RECRUITER PROFILE</span>
             <h2 id="company-profile-title" className="modal-job-title">
-              Company Profile
+              Company & Personal Profile
             </h2>
             <p className="modal-job-context">
-              Customize your employer identity, logo colors, and engineering culture description.
+              Manage your personal details, company information, and recruiter photo.
             </p>
           </div>
         </div>
@@ -928,15 +948,37 @@ export function CompanyProfileModal({
         {error && <div className="form-alert-error mb-4">{error}</div>}
         {success && <div className="status-pill-green mb-4">{success}</div>}
 
-        {/* Profile Photo / Company Logo Upload Section */}
+        <div className="mb-4 rounded-xl border border-slate-200 bg-white p-4">
+          <div className="mb-2 flex items-center justify-between text-xs">
+            <b className="text-slate-800">Profile completeness</b>
+            <span className="font-semibold text-slate-600">{profileCompleteness.percentage}%</span>
+          </div>
+          <div
+            className="h-2 overflow-hidden rounded-full bg-slate-100"
+            role="progressbar"
+            aria-label="Recruiter profile completeness"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={profileCompleteness.percentage}
+          >
+            <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${profileCompleteness.percentage}%` }} />
+          </div>
+          <p className="mt-2 text-[11px] text-slate-500">
+            {profileCompleteness.isComplete
+              ? "Your profile is complete. You can post jobs."
+              : `Complete these details before posting a job: ${profileCompleteness.missing.join(", ")}.`}
+          </p>
+        </div>
+
+        {/* Recruiter profile photo upload section */}
         <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl mb-4 space-y-3">
           <div className="flex items-center justify-between">
             <div>
               <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
-                Company Logo / Profile Photo
+                Personal Profile Photo
               </label>
               <p className="text-[11px] text-slate-500">
-                Shown on job postings, candidate applicant reviews, and dashboard.
+                Add a clear photo so candidates and your team can recognize you.
               </p>
             </div>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
@@ -947,32 +989,24 @@ export function CompanyProfileModal({
           {avatarError && <div className="form-alert-error text-xs p-2">{avatarError}</div>}
           {avatarSuccess && <div className="status-pill-green text-xs p-2">{avatarSuccess}</div>}
 
-          <div className="flex flex-col sm:flex-row items-center gap-4">
-            {/* Logo Preview */}
-            <div className="relative group shrink-0">
-              {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt={companyName || "Company logo"}
-                  className="w-16 h-16 rounded-2xl object-cover border-2 border-slate-200 shadow-sm"
-                />
-              ) : (
-                <div
-                  className="w-16 h-16 rounded-2xl text-xl font-black text-white flex items-center justify-center shadow-sm"
-                  style={{ backgroundColor: companyColor || "#059669" }}
-                >
-                  {(companyName ? companyName.slice(0, 2) : "CO").toUpperCase()}
-                </div>
-              )}
-              {avatarUploading && (
-                <div className="absolute inset-0 bg-white/80 rounded-2xl flex items-center justify-center backdrop-blur-2xs">
-                  <RefreshCw size={18} className="animate-spin text-emerald-600" />
-                </div>
-              )}
-            </div>
-
-            {/* Dropzone */}
-            <div
+          <div className="flex items-center gap-4">
+            <input
+              id="recruiter-avatar-input"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files && e.target.files[0]) {
+                  handleAvatarFileUpload(e.target.files[0]);
+                  e.target.value = "";
+                }
+              }}
+            />
+            <button
+              type="button"
+              disabled={avatarUploading}
+              aria-label={avatarUrl ? "Replace personal profile photo" : "Add personal profile photo"}
+              onClick={() => document.getElementById("recruiter-avatar-input")?.click()}
               onDragOver={(e) => {
                 e.preventDefault();
                 setAvatarDragActive(true);
@@ -981,45 +1015,32 @@ export function CompanyProfileModal({
               onDrop={(e) => {
                 e.preventDefault();
                 setAvatarDragActive(false);
-                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                  handleAvatarFileUpload(e.dataTransfer.files[0]);
-                }
+                if (e.dataTransfer.files?.[0]) handleAvatarFileUpload(e.dataTransfer.files[0]);
               }}
-              onClick={() => document.getElementById("recruiter-avatar-input")?.click()}
-              className={`flex-1 w-full border-2 border-dashed rounded-xl p-3 text-center transition cursor-pointer ${
-                avatarDragActive
-                  ? "border-emerald-500 bg-emerald-50/50"
-                  : "border-slate-300 hover:border-slate-400 bg-white"
-              }`}
+              className={`group relative h-28 w-28 shrink-0 overflow-hidden rounded-2xl border-2 transition ${
+                avatarDragActive ? "border-emerald-500" : "border-slate-200"
+              } ${avatarUrl ? "cursor-pointer" : "border-dashed bg-white hover:border-emerald-500"}`}
             >
-              <input
-                id="recruiter-avatar-input"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  if (e.target.files && e.target.files[0]) {
-                    handleAvatarFileUpload(e.target.files[0]);
-                  }
-                }}
-              />
-              {avatarUploading ? (
-                <div className="py-1 flex items-center justify-center gap-2 text-xs font-semibold text-emerald-700">
-                  <RefreshCw size={14} className="animate-spin" />
-                  <span>Uploading logo...</span>
-                </div>
+              {avatarUrl ? (
+                <>
+                  <img src={avatarUrl} alt={name || "Recruiter profile photo"} className="h-full w-full object-cover" />
+                  <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-slate-950/65 text-xs font-semibold text-white opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
+                    <Camera size={18} />
+                    Replace photo
+                  </span>
+                </>
               ) : (
-                <div className="py-0.5">
-                  <Camera size={18} className="mx-auto mb-1 text-slate-400" />
-                  <p className="text-xs font-bold text-slate-800">
-                    {avatarUrl ? "Click or drag to replace logo" : "Click to upload or drag & drop company logo"}
-                  </p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
-                    Clear square brand logos look best
-                  </p>
-                </div>
+                <span className="flex h-full flex-col items-center justify-center gap-1 text-slate-600">
+                  {avatarUploading ? <RefreshCw size={20} className="animate-spin" /> : <Camera size={20} />}
+                  <span className="text-xs font-semibold">{avatarUploading ? "Uploading..." : "Add photo"}</span>
+                </span>
               )}
-            </div>
+              {avatarUploading && avatarUrl && (
+                <span className="absolute inset-0 flex items-center justify-center bg-white/75">
+                  <RefreshCw size={20} className="animate-spin text-emerald-600" />
+                </span>
+              )}
+            </button>
 
             {avatarUrl && (
               <button
@@ -1027,7 +1048,7 @@ export function CompanyProfileModal({
                 onClick={handleAvatarRemove}
                 disabled={avatarUploading}
                 className="shrink-0 p-2 text-xs font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition flex items-center gap-1.5"
-                title="Remove logo"
+                title="Remove profile photo"
               >
                 <Trash2 size={13} />
                 <span className="hidden sm:inline">Remove</span>
@@ -1037,6 +1058,43 @@ export function CompanyProfileModal({
         </div>
 
         <form className="apply-form-fields" onSubmit={handleSave}>
+          <h3 className="text-sm font-bold text-slate-800">Personal Details</h3>
+          <div className="form-row-2col">
+            <div className="form-group">
+              <label className="field-label" htmlFor="recruiter-person-name">Full Name *</label>
+              <input
+                id="recruiter-person-name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="form-input-text"
+              />
+            </div>
+            <div className="form-group">
+              <label className="field-label" htmlFor="recruiter-person-email">Account Email</label>
+              <input
+                id="recruiter-person-email"
+                type="email"
+                value={user?.email || ""}
+                readOnly
+                className="form-input-text"
+              />
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="field-label" htmlFor="recruiter-position">Position at Company *</label>
+            <input
+              id="recruiter-position"
+              type="text"
+              placeholder="e.g. Talent Acquisition Manager"
+              value={position}
+              onChange={(e) => setPosition(e.target.value)}
+              required
+              className="form-input-text"
+            />
+          </div>
+          <h3 className="text-sm font-bold text-slate-800">Company Details</h3>
           <div className="form-row-2col">
             <div className="form-group">
               <label className="field-label" htmlFor="comp-name">Company Name *</label>
@@ -1050,13 +1108,14 @@ export function CompanyProfileModal({
               />
             </div>
             <div className="form-group">
-              <label className="field-label" htmlFor="comp-website">Website URL</label>
+              <label className="field-label" htmlFor="comp-website">Website URL *</label>
               <input
                 id="comp-website"
                 type="url"
                 placeholder="https://company.com"
                 value={companyWebsite}
                 onChange={(e) => setCompanyWebsite(e.target.value)}
+                required
                 className="form-input-text"
               />
             </div>
@@ -1064,13 +1123,14 @@ export function CompanyProfileModal({
 
           <div className="form-row-2col">
             <div className="form-group">
-              <label className="field-label" htmlFor="comp-location">Headquarters Location</label>
+              <label className="field-label" htmlFor="comp-location">Headquarters Location *</label>
               <input
                 id="comp-location"
                 type="text"
                 placeholder="e.g. San Francisco, CA & Remote"
                 value={companyLocation}
                 onChange={(e) => setCompanyLocation(e.target.value)}
+                required
                 className="form-input-text"
               />
             </div>
@@ -1082,7 +1142,9 @@ export function CompanyProfileModal({
                 value={companySize}
                 onChange={(e) => setCompanySize(e.target.value)}
                 className="form-input-text"
+                required
               >
+                <option value="" disabled>Select company size</option>
                 <option value="1-10">1 - 10 employees</option>
                 <option value="10-50">10 - 50 employees</option>
                 <option value="50-200">50 - 200 employees</option>
@@ -1093,24 +1155,8 @@ export function CompanyProfileModal({
           </div>
 
           <div className="form-group">
-            <label className="field-label" htmlFor="comp-color">
-              Brand Badge Color
-            </label>
-            <div className="flex items-center gap-3">
-              <input
-                id="comp-color"
-                type="color"
-                value={companyColor}
-                onChange={(e) => setCompanyColor(e.target.value)}
-                className="h-10 w-16 cursor-pointer rounded border border-slate-200 bg-white p-1"
-              />
-              <span className="text-sm font-mono text-slate-600">{companyColor}</span>
-            </div>
-          </div>
-
-          <div className="form-group">
             <label className="field-label" htmlFor="comp-desc">
-              Company Mission & Culture Summary
+              Company Mission & Culture Summary *
             </label>
             <textarea
               id="comp-desc"
@@ -1118,6 +1164,7 @@ export function CompanyProfileModal({
               placeholder="Tell candidates what your engineering team is building and the values you prioritize..."
               value={companyDescription}
               onChange={(e) => setCompanyDescription(e.target.value)}
+              required
               className="form-textarea"
             />
           </div>
@@ -1136,7 +1183,7 @@ export function CompanyProfileModal({
               className="btn-submit-apply"
               disabled={loading}
             >
-              <span>{loading ? "Saving..." : "Save Company Profile"}</span>
+              <span>{loading ? "Saving..." : "Save Profile"}</span>
             </button>
           </div>
         </form>

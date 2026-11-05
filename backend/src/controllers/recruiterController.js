@@ -9,6 +9,7 @@ export async function updateRecruiterProfile(req, res, next) {
     const recruiter = req.user;
     const body = req.body ?? {};
     if (typeof body.name === "string" && body.name.trim()) recruiter.name = body.name.trim();
+    if (body.position !== undefined) recruiter.position = String(body.position).trim();
     if (body.avatarUrl !== undefined) {
       recruiter.avatarUrl = String(body.avatarUrl).trim();
       if (!recruiter.avatarUrl) {

@@ -29,6 +29,15 @@ async function runTests() {
   const candToken = candReg.token;
   console.log("✓ Candidate registered successfully with token and safe user profile.");
 
+  const githubScoreRes = await fetch(`${BASE_URL}/api/github-score/me`, {
+    headers: { Authorization: `Bearer ${candToken}` },
+  });
+  const githubScoreData = await githubScoreRes.json();
+  if (!githubScoreRes.ok || !("score" in githubScoreData)) {
+    throw new Error(`Candidate GitHub score endpoint failed: ${JSON.stringify(githubScoreData)}`);
+  }
+  console.log("Candidate GitHub score endpoint returns a score or null.");
+
   // 2. Candidate Update Profile
   console.log("\n2. Testing Candidate Profile Update...");
   const candProfileRes = await fetch(`${BASE_URL}/api/auth/profile`, {
@@ -117,6 +126,52 @@ async function runTests() {
   }
   console.log("✓ Company profile photo/logo uploaded and streamed successfully.");
 
+  // 3c. Verify recruiters cannot post before their profile is complete.
+  console.log("\n3c. Testing Incomplete Recruiter Profile Job Posting Guard...");
+  const incompleteJobRes = await fetch(`${BASE_URL}/api/jobs`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${compToken}`,
+    },
+    body: JSON.stringify({
+      title: "Should Not Be Created",
+      category: "Backend Development",
+      salary: "$160,000 - $190,000",
+      workplace: "Remote",
+      type: "Full-time",
+      location: "Remote",
+      description: "This should be blocked until the recruiter profile is complete.",
+    }),
+  });
+  const incompleteJobData = await incompleteJobRes.json();
+  if (incompleteJobRes.status !== 400 || !incompleteJobData.message.includes("Complete your recruiter profile")) {
+    throw new Error(`Incomplete profile should block job posting: ${JSON.stringify(incompleteJobData)}`);
+  }
+  console.log("âœ“ Job posting was blocked while recruiter profile details were incomplete.");
+
+  const compProfileRes = await fetch(`${BASE_URL}/api/auth/profile`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${compToken}`,
+    },
+    body: JSON.stringify({
+      name: "Acme Recruiter",
+      position: "Talent Acquisition Manager",
+      companyName: "Acme Cloud Corp",
+      companyWebsite: "https://acmecloud.io",
+      companyDescription: "We build reliable cloud infrastructure for engineering teams.",
+      companyLocation: "San Francisco, CA",
+      companySize: "10-50",
+    }),
+  });
+  const compProfile = await compProfileRes.json();
+  if (!compProfileRes.ok || compProfile.user.position !== "Talent Acquisition Manager") {
+    throw new Error(`Recruiter profile update failed: ${JSON.stringify(compProfile)}`);
+  }
+  console.log("âœ“ Recruiter personal and company profile details saved.");
+
   // 4. Company Post Job
   console.log("\n4. Testing Company Job Creation...");
   const createJobRes = await fetch(`${BASE_URL}/api/jobs`, {
@@ -135,7 +190,6 @@ async function runTests() {
       location: "San Francisco, CA (Remote)",
       description: "We are seeking a senior distributed systems architect to scale our MongoDB and Express pipelines.",
       tags: ["Node.js", "MongoDB", "Distributed Systems", "AWS"],
-      featured: true,
     }),
   });
   const createdJobData = await createJobRes.json();
@@ -218,6 +272,9 @@ async function runTests() {
   const applicantsData = await applicantsRes.json();
   if (!applicantsRes.ok || applicantsData.totalApplicants < 1) {
     throw new Error(`Company get applicants failed: ${JSON.stringify(applicantsData)}`);
+  }
+  if (!("githubScore" in (applicantsData.applicants[0]?.candidateUser || {}))) {
+    throw new Error("Applicant API response is missing the linked GitHub score field.");
   }
   console.log(`✓ Company retrieved ${applicantsData.totalApplicants} applicant(s) for job.`);
 
