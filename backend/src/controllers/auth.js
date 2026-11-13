@@ -159,15 +159,52 @@ export async function login(req, res, next) {
   }
 }
 
-function getClientUrl() {
-  return (process.env.CLIENT_URL || "http://localhost:5173").replace(/\/$/, "");
+function getAllowedClientOrigins() {
+  const envOrigins = (process.env.CLIENT_URL || "")
+    .split(",")
+    .map((origin) => origin.trim().replace(/\/$/, ""))
+    .filter(Boolean);
+  return Array.from(
+    new Set([
+      "http://localhost:5173",
+      "http://localhost:3000",
+      "http://127.0.0.1:5173",
+      "http://127.0.0.1:3000",
+      ...envOrigins,
+    ]),
+  );
+}
+
+function resolveClientUrl(requestedUrl) {
+  const allowed = getAllowedClientOrigins();
+
+  if (requestedUrl && typeof requestedUrl === "string") {
+    try {
+      const parsed = new URL(requestedUrl);
+      const origin = parsed.origin.replace(/\/$/, "");
+
+      if (allowed.includes(origin) || parsed.hostname.endsWith(".vercel.app")) {
+        return origin;
+      }
+    } catch {
+      // Ignore invalid URL
+    }
+  }
+
+  // Fallback: prioritize production origin if configured, else default to first allowed origin
+  const prodOrigin = allowed.find(
+    (origin) => !origin.includes("localhost") && !origin.includes("127.0.0.1"),
+  );
+  return prodOrigin || allowed[0] || "http://localhost:5173";
 }
 
 function getCallbackUrl(req) {
-  return (
-    process.env.GITHUB_CALLBACK_URL ||
-    `${req.protocol}://${req.get("host")}/api/auth/github/callback`
-  );
+  if (process.env.GITHUB_CALLBACK_URL) {
+    return process.env.GITHUB_CALLBACK_URL.trim();
+  }
+  const protocol = req.headers["x-forwarded-proto"] || req.protocol || "http";
+  const host = req.headers["x-forwarded-host"] || req.get("host");
+  return `${protocol}://${host}/api/auth/github/callback`;
 }
 
 export function getGithubAuthStatus(_req, res) {
@@ -181,7 +218,8 @@ export function getGithubAuthStatus(_req, res) {
 }
 
 export function initiateGithubAuth(req, res) {
-  const clientUrl = getClientUrl();
+  const requestedReturn = req.query.return_to || req.query.client_url || req.headers.referer;
+  const clientUrl = resolveClientUrl(requestedReturn);
   const role = normalizeRole(req.query.role || "candidate");
   const clientId = process.env.GITHUB_CLIENT_ID;
 
@@ -196,6 +234,7 @@ export function initiateGithubAuth(req, res) {
   const state = Buffer.from(
     JSON.stringify({
       role,
+      clientUrl,
       nonce: crypto.randomBytes(16).toString("hex"),
     }),
   ).toString("base64url");
@@ -211,8 +250,19 @@ export function initiateGithubAuth(req, res) {
 }
 
 export async function githubAuthCallback(req, res, next) {
-  const clientUrl = getClientUrl();
+  let clientUrl = resolveClientUrl();
   const { code, state, error: oauthError, error_description: errorDescription } = req.query;
+
+  let requestedRole = "candidate";
+  try {
+    if (state) {
+      const decoded = JSON.parse(Buffer.from(state, "base64url").toString("utf-8"));
+      if (decoded.role) requestedRole = normalizeRole(decoded.role);
+      if (decoded.clientUrl) clientUrl = resolveClientUrl(decoded.clientUrl);
+    }
+  } catch {
+    // Ignore malformed state and default to candidate.
+  }
 
   if (oauthError) {
     return res.redirect(
@@ -226,16 +276,6 @@ export async function githubAuthCallback(req, res, next) {
     return res.redirect(
       `${clientUrl}?oauth_error=${encodeURIComponent("No authorization code received from GitHub.")}`,
     );
-  }
-
-  let requestedRole = "candidate";
-  try {
-    if (state) {
-      const decoded = JSON.parse(Buffer.from(state, "base64url").toString("utf-8"));
-      if (decoded.role) requestedRole = normalizeRole(decoded.role);
-    }
-  } catch {
-    // Ignore malformed state and default to candidate.
   }
 
   try {

@@ -1,4 +1,15 @@
-const API_BASE_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
+const getApiBaseUrl = () => {
+  const envUrl = (import.meta.env.VITE_BACKEND_URL || "").trim().replace(/\/$/, "");
+  if (typeof window !== "undefined") {
+    const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+    if (!isLocal && (envUrl.includes("localhost") || envUrl.includes("127.0.0.1"))) {
+      return "";
+    }
+  }
+  return envUrl;
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export function getStoredToken() {
   try {
