@@ -67,8 +67,25 @@ export default function AuthModal({
 
   const handleGithubLogin = () => {
     clearErrors();
-    const backendUrl = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/$/, "");
-    window.location.href = `${backendUrl}/api/auth/github?role=${role}`;
+    const isLocal =
+      typeof window !== "undefined" &&
+      (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+
+    let backendUrl = (import.meta.env.VITE_BACKEND_URL || "").trim().replace(/\/$/, "");
+
+    // If running in deployed mode, do not use localhost backend fallback
+    if (!isLocal && (backendUrl.includes("localhost") || backendUrl.includes("127.0.0.1"))) {
+      backendUrl = "";
+    } else if (isLocal && !backendUrl) {
+      backendUrl = "http://localhost:5000";
+    }
+
+    const returnTo = encodeURIComponent(window.location.origin);
+    const targetUrl = backendUrl
+      ? `${backendUrl}/api/auth/github?role=${role}&return_to=${returnTo}`
+      : `/api/auth/github?role=${role}&return_to=${returnTo}`;
+
+    window.location.href = targetUrl;
   };
 
   const handleFillDemo = (type) => {

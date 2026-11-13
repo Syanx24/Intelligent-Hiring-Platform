@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { clearStoredAuth, getStoredUser } from "../service/apiClient.js";
+import { clearStoredAuth, getStoredUser, setStoredAuth } from "../service/apiClient.js";
 import { getCurrentUser } from "../service/authAPI.js";
 import Header from "../components/Header.jsx";
 import Footer from "../components/Footer.jsx";
@@ -19,7 +19,7 @@ export default function ProtectView({ role, children }) {
     const params = new URLSearchParams(window.location.search);
     const oauthToken = params.get("oauth_token");
     if (oauthToken) {
-      localStorage.setItem("token", oauthToken);
+      setStoredAuth(oauthToken, null);
       window.history.replaceState({}, document.title, window.location.pathname);
     }
 
