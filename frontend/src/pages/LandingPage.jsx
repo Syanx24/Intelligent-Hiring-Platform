@@ -345,7 +345,8 @@ export default function LandingPage() {
               <span className="relative inline-flex h-2 w-2 rounded-full bg-[#4f46e5]" />
             </span>
             <span className="font-mono text-[10.5px] font-semibold uppercase tracking-wider text-[#18181b]">
-              AI-POWERED REPO TELEMETRY
+            {/* AI-POWERED REPO TELEMETRY */}
+
             </span>
             <span className="text-[#a1a1aa]">•</span>
             <span className="font-mono text-[11px] font-semibold text-[#4f46e5]">
