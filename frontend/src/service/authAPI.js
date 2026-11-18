@@ -1,6 +1,7 @@
 import {
   clearStoredAuth,
   getStoredToken,
+  getStoredUser,
   requestJson,
   setStoredAuth,
 } from "./apiClient.js";
@@ -41,9 +42,12 @@ export async function getCurrentUser({ signal } = {}) {
     const user = await requestJson("/api/auth/me", { signal }, "Session verification failed");
     setStoredAuth(token, user);
     return user;
-  } catch {
-    clearStoredAuth();
-    return null;
+  } catch (error) {
+    if (error.status === 401 || error.status === 403) {
+      clearStoredAuth();
+      return null;
+    }
+    return getStoredUser();
   }
 }
 
@@ -58,7 +62,6 @@ export async function updateUserProfile(profileData) {
     "Could not update profile",
   );
   if (data.user) {
-    data.user.githubScore = data.githubScore || null;
     setStoredAuth(getStoredToken(), data.user);
   }
   return data.user;

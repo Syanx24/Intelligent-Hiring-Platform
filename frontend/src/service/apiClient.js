@@ -66,6 +66,7 @@ export async function requestJson(url, options = {}, fallbackMessage = "Request 
 
   if (!response.ok) {
     const error = new Error(body?.message || `${fallbackMessage} (${response.status}).`);
+    error.status = response.status;
     if (Array.isArray(body?.errors)) error.errors = body.errors;
     throw error;
   }

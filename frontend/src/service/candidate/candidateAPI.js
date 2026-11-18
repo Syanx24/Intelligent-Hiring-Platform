@@ -14,7 +14,20 @@ export async function uploadCandidateResume({ fileName, fileData }) {
   return data;
 }
 
-export async function getMyGithubScore() {
-  const data = await requestJson("/api/github-score/me", {}, "Could not load GitHub score");
-  return data.score;
+export async function removeCandidateResume() {
+  const data = await requestJson(
+    "/api/auth/resume",
+    { method: "DELETE" },
+    "Could not remove CV",
+  );
+  if (data.user) setStoredAuth(getStoredToken(), data.user);
+  return data;
+}
+
+export async function getGithubSummary(githubUrl) {
+  return requestJson(
+    `/api/github-summary?url=${encodeURIComponent(githubUrl)}`,
+    {},
+    "Could not load GitHub summary",
+  );
 }

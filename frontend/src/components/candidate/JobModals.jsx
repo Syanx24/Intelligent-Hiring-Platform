@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { AlertCircle, ArrowRight, Check, Clock, Eye, FileText, FileUp, MapPin, Sparkles, X } from "lucide-react";
 import { CompanyMark, timeAgo } from "./jobUtils.jsx";
 
-export function JobDetailsModal({ job, onClose, onApply }) {
+export function JobDetailsModal({ job, onClose, onApply, alreadyApplied = false }) {
   if (!job) return null;
 
   return (
@@ -84,11 +84,12 @@ export function JobDetailsModal({ job, onClose, onApply }) {
             </button>
             <button
               type="button"
-              className="modal-btn-apply"
+              className={`modal-btn-apply ${alreadyApplied ? "already-applied" : ""}`}
               onClick={onApply}
+              disabled={alreadyApplied}
             >
-              <span>Apply for this role</span>
-              <ArrowRight size={16} />
+              <span>{alreadyApplied ? "Already applied" : "Apply for this role"}</span>
+              {!alreadyApplied && <ArrowRight size={16} />}
             </button>
           </div>
         </div>
@@ -144,6 +145,7 @@ export function ApplicationModal({
     }
 
     setUploading(true);
+    e.target.value = "";
     const reader = new FileReader();
     reader.onload = () => {
       setResumeUrl(reader.result);
@@ -314,6 +316,17 @@ export function ApplicationModal({
                         Preview
                       </a>
                     )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setResumeUrl("");
+                        setSelectedFileName("");
+                        setSelectedFileSize(0);
+                      }}
+                      className="text-[11px] font-bold text-rose-700 hover:text-rose-900 bg-rose-50 border border-rose-100 px-2 py-1 rounded-md shrink-0"
+                    >
+                      Delete
+                    </button>
                   </div>
                 )}
 
@@ -324,7 +337,7 @@ export function ApplicationModal({
                 >
                   <FileUp size={15} className="text-slate-500" />
                   <span className="text-xs font-semibold text-slate-700">
-                    {uploading ? "Reading PDF..." : "Upload CV Document (PDF, max 2MB)"}
+                    {uploading ? "Reading PDF..." : resumeUrl ? "Replace CV Document (PDF, max 2MB)" : "Upload CV Document (PDF, max 2MB)"}
                   </span>
                   <input
                     id="cv-modal-input"

@@ -2,20 +2,7 @@ import mongoose from "mongoose";
 import Application from "../models/Application.js";
 import Candidate from "../models/Candidate.js";
 import JobDetail from "../models/JobDetail.js";
-import GithubAnalysis from "../models/githubScore.js";
-
-async function attachGithubScores(applications) {
-  const candidateIds = [...new Set(applications.map((application) => application.candidateUser?._id?.toString()).filter(Boolean))];
-  const scores = await GithubAnalysis.find({ candidateId: { $in: candidateIds } }).lean();
-  const scoreByCandidate = new Map(scores.map((score) => [String(score.candidateId), score]));
-  return applications.map((application) => {
-    const data = application.toObject();
-    if (data.candidateUser) {
-      data.candidateUser.githubScore = scoreByCandidate.get(String(data.candidateUser._id)) || null;
-    }
-    return data;
-  });
-}
+import { isCloudinaryConfigured, uploadCloudinaryPdf } from "../config/cloudinary.js";
 
 export async function createApplication(req, res, next) {
   try {
@@ -30,7 +17,7 @@ export async function createApplication(req, res, next) {
     }
 
     const applicantName = (name || req.user?.name || "").trim();
-    const applicantEmail = (email || req.user?.email || "").trim().toLowerCase();
+    const applicantEmail = (req.user?.email || email || "").trim().toLowerCase();
     const applicantGithub = (githubUrl || req.user?.githubUrl || "").trim();
     let applicantResume = (resumeUrl || req.user?.resumeUrl || "").trim();
 
@@ -47,18 +34,38 @@ export async function createApplication(req, res, next) {
       return res.status(404).json({ message: "This job is no longer available." });
     }
 
-    let resumeData;
+    const priorApplicationQuery = req.user
+      ? { job: jobId, $or: [{ candidateUser: req.user._id }, { email: req.user.email }] }
+      : { job: jobId, email: applicantEmail };
+    if (await Application.exists(priorApplicationQuery)) {
+      return res.status(409).json({ message: "You have already applied to this role." });
+    }
+
     let resumeFileName = "";
+    let cloudResumeUrl = "";
     const resumeIsBase64 =
       applicantResume.startsWith("data:application/pdf;base64,") ||
       applicantResume.startsWith("data:application/octet-stream;base64,");
     if (resumeIsBase64) {
       const base64Data = applicantResume.replace(/^data:[^;]+;base64,/, "");
-      resumeData = Buffer.from(base64Data, "base64");
-      if (resumeData.length > 2 * 1024 * 1024) {
+      const resumeBuffer = Buffer.from(base64Data, "base64");
+      if (resumeBuffer.length > 2 * 1024 * 1024) {
         return res.status(400).json({ message: "Resume files cannot exceed 2MB." });
       }
+      if (!isCloudinaryConfigured()) {
+        return res.status(503).json({ message: "Resume uploads are not configured. Add Cloudinary credentials to the API environment." });
+      }
       resumeFileName = `${applicantName.replace(/[^a-zA-Z0-9_-]/g, "_")}_CV.pdf`;
+      try {
+        const uploaded = await uploadCloudinaryPdf(resumeBuffer, {
+          folder: "intelligent-hiring/resumes/applications",
+          publicId: `${jobId}-${Date.now()}-${Math.random().toString(36).slice(2)}.pdf`,
+        });
+        cloudResumeUrl = uploaded.secure_url;
+      } catch (error) {
+        console.error("Cloudinary application resume upload failed:", error.message);
+        return res.status(502).json({ message: "Could not upload resume to Cloudinary. Check the Cloudinary configuration." });
+      }
       applicantResume = "";
     }
 
@@ -67,8 +74,8 @@ export async function createApplication(req, res, next) {
       name: applicantName,
       email: applicantEmail,
       githubUrl: applicantGithub,
-      resumeUrl: applicantResume,
-      ...(resumeData ? { resumeData, resumeFileName, resumeFileSize: resumeData.length } : {}),
+      resumeUrl: cloudResumeUrl || applicantResume,
+      ...(cloudResumeUrl ? { resumeFileName } : {}),
       message: (message ?? "").trim(),
       status: "Applied",
     };
@@ -78,11 +85,6 @@ export async function createApplication(req, res, next) {
     }
 
     const application = await Application.create(applicationData);
-    if (resumeData) {
-      application.resumeUrl = `/api/resumes/application/${application._id}`;
-      await application.save();
-    }
-
     res.status(201).json({
       message: "Your application has been submitted successfully.",
       applicationId: application.id,
@@ -90,7 +92,7 @@ export async function createApplication(req, res, next) {
   } catch (error) {
     if (error.code === 11000) {
       return res.status(409).json({
-        message: "You have already applied to this role with this email.",
+        message: "You have already applied to this role.",
       });
     }
     next(error);
@@ -136,7 +138,7 @@ export async function getJobApplicants(req, res, next) {
     const applicantRecords = await Application.find({ job: jobId })
       .populate("candidateUser", "name avatarUrl headline githubUrl portfolioUrl skills bio experienceYears")
       .sort({ createdAt: -1 });
-    const applicants = await attachGithubScores(applicantRecords);
+    const applicants = applicantRecords.map((application) => application.toObject());
 
     res.json({
       jobTitle: job.title,
@@ -156,7 +158,7 @@ export async function getCompanyApplications(req, res, next) {
       .populate("job", "title company location workplace category type")
       .populate("candidateUser", "name avatarUrl headline githubUrl portfolioUrl skills bio experienceYears location")
       .sort({ createdAt: -1 });
-    const applications = await attachGithubScores(applicationRecords);
+    const applications = applicationRecords.map((application) => application.toObject());
     res.json(applications);
   } catch (error) {
     next(error);
@@ -174,6 +176,8 @@ export async function streamApplicationResume(req, res, next) {
       "+resumeData +resumeFileName +resumeFileSize",
     );
     if (!application) return res.status(404).json({ message: "Application not found." });
+
+    if (application.resumeUrl?.includes("res.cloudinary.com/")) return res.redirect(application.resumeUrl);
 
     let data = application.resumeData;
     let fileName = application.resumeFileName;

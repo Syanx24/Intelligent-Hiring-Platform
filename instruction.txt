@@ -12,4 +12,4 @@ git push origin main (git clone add remote , don't worry)
 
 Recruiter portal component prompt
 
-githubScore.js should called by python model after fetch github link
+GitHub summary uses public profile and repository information; do not calculate or persist a candidate score.
