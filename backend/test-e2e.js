@@ -29,14 +29,14 @@ async function runTests() {
   const candToken = candReg.token;
   console.log("✓ Candidate registered successfully with token and safe user profile.");
 
-  const githubScoreRes = await fetch(`${BASE_URL}/api/github-score/me`, {
+  const githubSummaryRes = await fetch(`${BASE_URL}/api/github-summary?url=${encodeURIComponent("https://example.com/profile")}`, {
     headers: { Authorization: `Bearer ${candToken}` },
   });
-  const githubScoreData = await githubScoreRes.json();
-  if (!githubScoreRes.ok || !("score" in githubScoreData)) {
-    throw new Error(`Candidate GitHub score endpoint failed: ${JSON.stringify(githubScoreData)}`);
+  const githubSummaryData = await githubSummaryRes.json();
+  if (githubSummaryRes.status !== 400 || !githubSummaryData.message) {
+    throw new Error(`Candidate GitHub summary URL validation failed: ${JSON.stringify(githubSummaryData)}`);
   }
-  console.log("Candidate GitHub score endpoint returns a score or null.");
+  console.log("Candidate GitHub summary endpoint rejects invalid profile URLs.");
 
   // 2. Candidate Update Profile
   console.log("\n2. Testing Candidate Profile Update...");
@@ -272,9 +272,6 @@ async function runTests() {
   const applicantsData = await applicantsRes.json();
   if (!applicantsRes.ok || applicantsData.totalApplicants < 1) {
     throw new Error(`Company get applicants failed: ${JSON.stringify(applicantsData)}`);
-  }
-  if (!("githubScore" in (applicantsData.applicants[0]?.candidateUser || {}))) {
-    throw new Error("Applicant API response is missing the linked GitHub score field.");
   }
   console.log(`✓ Company retrieved ${applicantsData.totalApplicants} applicant(s) for job.`);
 

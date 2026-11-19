@@ -45,7 +45,7 @@ import {
   updateUserProfile,
   uploadProfileAvatar,
 } from "../service/authAPI.js";
-import { getMyGithubScore, uploadCandidateResume } from "../service/candidate/candidateAPI.js";
+import { getGithubSummary, removeCandidateResume, uploadCandidateResume } from "../service/candidate/candidateAPI.js";
 import { getJobs } from "../service/JobList/jobListAPI.js";
 import {
   getMyApplications,
@@ -62,61 +62,76 @@ const statusBadges = {
     bg: "bg-blue-50 text-blue-700 border-blue-200",
     dot: "bg-blue-500",
     label: "Applied",
+    emoji: "📨",
     step: 1,
   },
   "Under review": {
     bg: "bg-amber-50 text-amber-700 border-amber-200",
     dot: "bg-amber-500",
     label: "Under Review",
+    emoji: "🔎",
     step: 2,
   },
   Reviewing: {
     bg: "bg-amber-50 text-amber-700 border-amber-200",
     dot: "bg-amber-500",
     label: "Reviewing",
+    emoji: "🔎",
+    step: 2,
+  },
+  Shortlisted: {
+    bg: "bg-amber-50 text-amber-700 border-amber-200",
+    dot: "bg-amber-500",
+    label: "Under Review",
+    emoji: "🧐",
     step: 2,
   },
   Interviewing: {
     bg: "bg-purple-50 text-purple-700 border-purple-200",
     dot: "bg-purple-500",
     label: "Interviewing",
+    emoji: "🎤",
     step: 3,
   },
   Interview: {
     bg: "bg-purple-50 text-purple-700 border-purple-200",
     dot: "bg-purple-500",
     label: "Interviewing",
+    emoji: "🎤",
     step: 3,
   },
   Accepted: {
     bg: "bg-emerald-50 text-emerald-700 border-emerald-200",
     dot: "bg-emerald-500",
     label: "Accepted / Offer",
+    emoji: "🎉",
     step: 4,
   },
   Hired: {
     bg: "bg-emerald-50 text-emerald-700 border-emerald-200",
     dot: "bg-emerald-500",
     label: "Hired",
+    emoji: "🏆",
     step: 4,
   },
   Rejected: {
     bg: "bg-rose-50 text-rose-700 border-rose-200",
     dot: "bg-rose-500",
-    label: "Decision Made",
+    label: "Rejected",
+    emoji: "❌",
     step: 4,
   },
 };
 
-const CATEGORIES = [
-  "All roles",
-  "Full Stack",
-  "Backend",
-  "Frontend",
-  "AI & Data",
-  "DevOps & Cloud",
-  "Mobile",
-];
+function getCandidateStatusConfig(status) {
+  const normalized = String(status || "Applied").trim().toLowerCase();
+  if (normalized === "rejected") return statusBadges.Rejected;
+  if (normalized === "shortlisted") return statusBadges.Shortlisted;
+  if (["selected for test", "selected for tests", "test selected", "under review"].includes(normalized)) {
+    return statusBadges["Under review"];
+  }
+  return statusBadges[status] || statusBadges.Applied;
+}
 
 const WORKPLACES = ["All", "Remote", "Hybrid", "On-site"];
 
@@ -155,7 +170,6 @@ export default function CandidatePage({
   const [jobsLoading, setJobsLoading] = useState(true);
   const [jobsError, setJobsError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All roles");
   const [selectedWorkplace, setSelectedWorkplace] = useState("All");
 
   // Dashboard Applications State
@@ -183,8 +197,10 @@ export default function CandidatePage({
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [profileSuccess, setProfileSuccess] = useState("");
-  const [githubScore, setGithubScore] = useState(user?.githubScore || null);
-  const [githubScoreLoading, setGithubScoreLoading] = useState(false);
+  const [githubSummary, setGithubSummary] = useState(null);
+  const [githubSummaryMinimized, setGithubSummaryMinimized] = useState(false);
+  const [githubSummaryLoading, setGithubSummaryLoading] = useState(false);
+  const [githubSummaryError, setGithubSummaryError] = useState("");
 
   // Sync profile form when user object updates
   useEffect(() => {
@@ -200,15 +216,6 @@ export default function CandidatePage({
       setSkillsList(user.skills || []);
     }
   }, [user]);
-
-  useEffect(() => {
-    if (!isCandidate || activeTab !== "profile") return;
-    setGithubScoreLoading(true);
-    getMyGithubScore()
-      .then(setGithubScore)
-      .catch(() => setGithubScore(null))
-      .finally(() => setGithubScoreLoading(false));
-  }, [isCandidate, activeTab]);
 
   // Load jobs when candidate portal is active
   const fetchPortalJobs = async () => {
@@ -445,6 +452,22 @@ export default function CandidatePage({
     }
   };
 
+  const handleCvRemove = async () => {
+    setCvError("");
+    setCvSuccess("");
+    setCvUploading(true);
+    try {
+      const res = await removeCandidateResume();
+      setProfileResume("");
+      setCvSuccess("Resume removed.");
+      if (onUserUpdate && res.user) onUserUpdate(res.user, "Resume removed.");
+    } catch (error) {
+      setCvError(error.message || "Could not remove resume.");
+    } finally {
+      setCvUploading(false);
+    }
+  };
+
   // Map of applied job IDs for quick lookup in job listing
   const appliedJobIdsMap = useMemo(() => {
     const map = new Map();
@@ -460,8 +483,6 @@ export default function CandidatePage({
   // Filtered jobs list
   const filteredJobs = useMemo(() => {
     return jobs.filter((job) => {
-      const matchesCategory =
-        selectedCategory === "All roles" || job.category === selectedCategory;
       const matchesWorkplace =
         selectedWorkplace === "All" || job.workplace === selectedWorkplace;
       const matchesSearch =
@@ -473,9 +494,9 @@ export default function CandidatePage({
           tag.toLowerCase().includes(searchTerm.toLowerCase()),
         );
 
-      return matchesCategory && matchesWorkplace && matchesSearch;
+      return matchesWorkplace && matchesSearch;
     });
-  }, [jobs, selectedCategory, selectedWorkplace, searchTerm]);
+  }, [jobs, selectedWorkplace, searchTerm]);
 
   // Add a skill tag
   const handleAddSkill = (e) => {
@@ -513,7 +534,6 @@ export default function CandidatePage({
       });
 
       onUserUpdate(updated, "Profile dossier saved.");
-      setGithubScore(updated.githubScore || null);
       setProfileSuccess("Your technical dossier has been updated.");
       setTimeout(() => setProfileSuccess(""), 4000);
     } catch (err) {
@@ -526,6 +546,11 @@ export default function CandidatePage({
   // Quick Apply submit
   const handleApplicationSubmit = async (e) => {
     e.preventDefault();
+    if (!applyJob) return;
+    if (appliedJobIdsMap.has(String(applyJob._id))) {
+      setApplyErrorMsg("You have already applied to this role.");
+      return;
+    }
     setApplyState("submitting");
     setApplyErrorMsg("");
     const form = new FormData(e.currentTarget);
@@ -567,7 +592,7 @@ export default function CandidatePage({
   const stats = useMemo(() => {
     const total = applications.length;
     const inReview = applications.filter(
-      (a) => a.status === "Under review" || a.status === "Reviewing",
+      (a) => ["Under review", "Reviewing", "Shortlisted", "Selected for test", "Selected for tests"].includes(a.status),
     ).length;
     const interviewing = applications.filter(
       (a) => a.status === "Interviewing" || a.status === "Interview",
@@ -1032,6 +1057,7 @@ export default function CandidatePage({
               </div>
             </div>
 
+            {/* Temporarily hidden: Available Roles KPI.
             <div className="bg-white border border-slate-200/80 p-3.5 rounded-2xl shadow-sm">
               <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider block">
                 Available Roles
@@ -1041,6 +1067,7 @@ export default function CandidatePage({
                 <span className="text-[11px] text-slate-400">matching</span>
               </div>
             </div>
+            */}
           </div>
         </div>
       </section>
@@ -1097,24 +1124,6 @@ export default function CandidatePage({
               </div>
             </div>
 
-            {/* Category Pills Strip */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`text-xs font-semibold px-3 py-1 rounded-full transition whitespace-nowrap ${
-                    selectedCategory === cat
-                      ? "bg-emerald-600 text-white shadow-sm"
-                      : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300"
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-
             {/* Jobs Grid */}
             {jobsLoading ? (
               <div className="py-20 text-center text-slate-400">
@@ -1135,11 +1144,11 @@ export default function CandidatePage({
                   return (
                     <div
                       key={job._id}
-                      className="bg-white border border-slate-200/80 hover:border-slate-300 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow transition flex flex-col justify-between"
+                      className="relative bg-white border border-slate-200/80 hover:border-slate-300 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow transition flex flex-col justify-between"
                     >
-                      <div>
+                      <div className={isApplied ? "blur-[1px] opacity-75" : ""}>
                         {/* Company Badge & Title */}
-                        <div className="flex items-start justify-between gap-3 mb-2.5">
+                        <div className={`flex items-start justify-between gap-3 mb-2.5 ${isApplied ? "pr-28" : ""}`}>
                           <div className="flex items-center gap-3">
                             <div
                               className="w-10 h-10 rounded-xl text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-sm"
@@ -1156,11 +1165,7 @@ export default function CandidatePage({
                             </div>
                           </div>
 
-                          {isApplied ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
-                              <Check size={11} /> Applied ({appliedStatus})
-                            </span>
-                          ) : (
+                          {!isApplied && (
                             <span className="text-[11px] font-semibold text-slate-400 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md">
                               {job.workplace}
                             </span>
@@ -1203,6 +1208,12 @@ export default function CandidatePage({
                           </div>
                         )}
                       </div>
+
+                      {isApplied && (
+                        <span className="absolute right-4 top-4 z-10 inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
+                          <Check size={11} /> Applied
+                        </span>
+                      )}
 
                       {/* Card Bottom Actions */}
                       <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
@@ -1253,7 +1264,6 @@ export default function CandidatePage({
                   type="button"
                   onClick={() => {
                     setSearchTerm("");
-                    setSelectedCategory("All roles");
                     setSelectedWorkplace("All");
                   }}
                   className="text-xs font-bold text-emerald-600 hover:underline"
@@ -1272,7 +1282,9 @@ export default function CandidatePage({
           <section className="space-y-4">
             <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
               <div>
-                <h2 className="text-sm font-bold text-slate-950">Application Pipeline</h2>
+                <h2 className="text-sm font-bold text-slate-950">
+                  Application Pipeline <span className="ml-1 inline-flex min-w-6 items-center justify-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-600">{applications.length}</span>
+                </h2>
                 <p className="text-xs text-slate-500">Live progress tracker direct from hiring teams.</p>
               </div>
               <button
@@ -1299,7 +1311,7 @@ export default function CandidatePage({
               <div className="space-y-3">
                 {applications.map((app) => {
                   const job = app.job || {};
-                  const statusConfig = statusBadges[app.status] || statusBadges.Applied;
+                  const statusConfig = getCandidateStatusConfig(app.status);
 
                   return (
                     <div
@@ -1343,6 +1355,7 @@ export default function CandidatePage({
                             className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border ${statusConfig.bg}`}
                           >
                             <span className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot}`} />
+                            <span className="inline-block animate-bounce" aria-hidden="true">{statusConfig.emoji}</span>
                             {statusConfig.label}
                           </span>
                           {job._id && (
@@ -1482,27 +1495,47 @@ export default function CandidatePage({
               </div>
             )}
 
-            <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between gap-4">
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600">GitHub Score</p>
-                <p className="text-xs text-slate-500 mt-1">
-                  {githubScoreLoading ? "Loading score…" : !profileGithub.trim()
-                    ? "Add a GitHub profile link to generate your score."
-                    : githubScore?.status === "completed"
-                      ? "Based on public repository evidence."
-                      : githubScore?.status === "failed"
-                        ? githubScore.errorMessage || "Could not analyze this profile. Check the link and save again."
-                        : "Save your profile to generate a score."}
-                </p>
+            <section className="github-summary-card p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600">GitHub Summary</p>
+                  <p className="text-xs text-slate-500 mt-1">View public profile details and recently updated repositories.</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  {githubSummary && (
+                    <button
+                      type="button"
+                      onClick={() => setGithubSummaryMinimized((minimized) => !minimized)}
+                      className="px-3 py-2 text-xs font-bold text-white bg-slate-700 rounded-xl hover:bg-slate-600"
+                      aria-expanded={!githubSummaryMinimized}
+                    >
+                      {githubSummaryMinimized ? "Show summary" : "Minimize summary"}
+                    </button>
+                  )}
+                {profileGithub.trim() ? (
+                  <button type="button" disabled={githubSummaryLoading} onClick={async () => {
+                    setGithubSummaryLoading(true); setGithubSummaryError("");
+                    try { setGithubSummary(await getGithubSummary(profileGithub.trim())); }
+                    catch (error) { setGithubSummaryError(error.message || "Could not load GitHub summary."); }
+                    finally { setGithubSummaryLoading(false); }
+                  }} className="shrink-0 px-3 py-2 text-xs font-bold text-white bg-slate-900 rounded-xl hover:bg-slate-800 disabled:opacity-60">
+                    {githubSummaryLoading ? "Loading…" : githubSummary ? "Refresh summary" : "GitHub summary"}
+                  </button>
+                ) : <button type="button" onClick={() => document.getElementById("candidate-github-url")?.focus()} className="px-3 py-2 text-xs font-bold text-white bg-slate-900 rounded-xl hover:bg-slate-800">Add GitHub</button>}
+                </div>
               </div>
-              {!profileGithub.trim() ? (
-                <button type="button" onClick={() => document.getElementById("candidate-github-url")?.focus()} className="shrink-0 px-3 py-2 text-xs font-bold text-white bg-slate-900 rounded-xl hover:bg-slate-800">
-                  Add GitHub
-                </button>
-              ) : githubScore?.status === "completed" ? (
-                <span className="text-2xl font-black text-slate-950">{githubScore.evidenceScore ?? "—"}<span className="text-xs text-slate-500"> / 100</span></span>
-              ) : null}
-            </div>
+              {githubSummaryError && <p className="mt-3 text-xs text-rose-700" role="alert">{githubSummaryError}</p>}
+              {githubSummary && githubSummaryMinimized && <p className="mt-3 text-xs text-slate-500">GitHub summary is minimized. You can refresh it above.</p>}
+              {githubSummary && !githubSummaryMinimized && <div className="github-summary-details mt-4 border-t border-slate-200 pt-4">
+                <div className="flex items-center gap-3">
+                  <img src={githubSummary.avatarUrl} alt="" className="h-10 w-10 rounded-full object-cover" />
+                  <div><a href={githubSummary.profileUrl} target="_blank" rel="noreferrer" className="font-semibold text-sm text-slate-900">{githubSummary.name || githubSummary.login}</a><p className="text-xs text-slate-500">@{githubSummary.login}</p></div>
+                </div>
+                {githubSummary.bio && <p className="mt-3 text-sm text-slate-600">{githubSummary.bio}</p>}
+                <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500"><span>{githubSummary.publicRepos} public repos</span><span>{githubSummary.followers} followers</span>{githubSummary.location && <span>{githubSummary.location}</span>}</div>
+                {githubSummary.repositories?.length > 0 && <ul className="mt-3 grid gap-2 sm:grid-cols-2">{githubSummary.repositories.map((repo) => <li key={repo.url} className="rounded-lg border border-slate-200 bg-white p-3"><a href={repo.url} target="_blank" rel="noreferrer" className="text-xs font-semibold text-slate-800">{repo.name}</a><p className="mt-1 text-xs text-slate-500">{repo.description || repo.language || "Public repository"}</p></li>)}</ul>}
+              </div>}
+            </section>
 
             {/* Profile Photo Uploader Section */}
             <div className="p-5 bg-slate-50/80 border border-slate-200 rounded-2xl space-y-3.5">
@@ -1596,10 +1629,10 @@ export default function CandidatePage({
                     <div className="py-1">
                       <Camera size={20} className="mx-auto mb-1 text-slate-400" />
                       <p className="text-xs font-bold text-slate-800">
-                        {user.avatarUrl ? "Click or drag to replace your photo" : "Click to upload or drag & drop your photo"}
+                        {user.avatarUrl ? "Replace profile photo" : "Add profile photo"}
                       </p>
                       <p className="text-[11px] text-slate-400 mt-0.5">
-                        High-resolution square headshots work best
+                        Click or drag a high-resolution square headshot here
                       </p>
                     </div>
                   )}
@@ -1614,7 +1647,7 @@ export default function CandidatePage({
                     title="Remove profile photo"
                   >
                     <Trash2 size={13} />
-                    <span className="hidden sm:inline">Remove</span>
+                    <span>Delete</span>
                   </button>
                 )}
               </div>
@@ -1726,6 +1759,17 @@ export default function CandidatePage({
                   </div>
                 )}
 
+                <input
+                  id="cv-file-input"
+                  type="file"
+                  accept="application/pdf,.pdf"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) handleCvFileUpload(e.target.files[0]);
+                    e.target.value = "";
+                  }}
+                />
+
                 {/* If candidate already has an uploaded CV */}
                 {profileResume && (
                   <div className="p-3 bg-white border border-slate-200 rounded-xl flex items-center justify-between gap-3 shadow-2xs">
@@ -1752,12 +1796,28 @@ export default function CandidatePage({
                         <Eye size={12} />
                         <span>View PDF</span>
                       </a>
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById("cv-file-input")?.click()}
+                        disabled={cvUploading}
+                        className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1.5 rounded-lg transition disabled:opacity-50"
+                      >
+                        <FileUp size={12} /> Replace
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCvRemove}
+                        disabled={cvUploading}
+                        className="inline-flex items-center gap-1 text-xs font-bold text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-2.5 py-1.5 rounded-lg transition disabled:opacity-50"
+                      >
+                        <Trash2 size={12} /> Delete
+                      </button>
                     </div>
                   </div>
                 )}
 
-                {/* Dropzone Upload Box */}
-                <div
+                {/* Show the dotted upload area only before a resume is saved. */}
+                {!profileResume && <div
                   onDragOver={(e) => {
                     e.preventDefault();
                     setDragActive(true);
@@ -1777,17 +1837,6 @@ export default function CandidatePage({
                   }`}
                   onClick={() => document.getElementById("cv-file-input")?.click()}
                 >
-                  <input
-                    id="cv-file-input"
-                    type="file"
-                    accept="application/pdf,.pdf"
-                    className="hidden"
-                    onChange={(e) => {
-                      if (e.target.files && e.target.files[0]) {
-                        handleCvFileUpload(e.target.files[0]);
-                      }
-                    }}
-                  />
                   {cvUploading ? (
                     <div className="py-2 flex items-center justify-center gap-2 text-xs font-semibold text-emerald-700">
                       <RefreshCw size={14} className="animate-spin" />
@@ -1797,14 +1846,14 @@ export default function CandidatePage({
                     <div className="py-1">
                       <FileUp size={22} className="mx-auto mb-1.5 text-slate-400" />
                       <p className="text-xs font-bold text-slate-800">
-                        {profileResume ? "Click or drag to replace your PDF CV" : "Click to upload or drag & drop your CV"}
+                        {profileResume ? "Replace resume" : "Add resume"}
                       </p>
                       <p className="text-[11px] text-slate-400 mt-0.5">
                         PDF format only • Maximum file size 2MB
                       </p>
                     </div>
                   )}
-                </div>
+                </div>}
 
                 {/* Optional External Document Link & Experience */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
@@ -1926,9 +1975,11 @@ export default function CandidatePage({
       {/* Public Job Detail & Application Modals */}
       <JobDetailsModal
         job={selectedJob}
+        alreadyApplied={selectedJob ? appliedJobIdsMap.has(String(selectedJob._id)) : false}
         onClose={() => setSelectedJob(null)}
         onApply={() => {
           const target = selectedJob;
+          if (target && appliedJobIdsMap.has(String(target._id))) return;
           setSelectedJob(null);
           setApplyJob(target);
           setApplyState("idle");

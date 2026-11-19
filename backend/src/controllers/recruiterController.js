@@ -15,6 +15,7 @@ export async function updateRecruiterProfile(req, res, next) {
       if (!recruiter.avatarUrl) {
         recruiter.avatarData = undefined;
         recruiter.avatarFileName = "";
+        recruiter.avatarContentType = "image/jpeg";
       }
     }
     if (typeof body.companyName === "string" && body.companyName.trim()) {

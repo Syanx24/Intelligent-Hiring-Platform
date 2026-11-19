@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Candidate from "../models/Candidate.js";
 import Recruiter from "../models/Recruiter.js";
+import { deleteCloudinaryAsset, isCloudinaryConfigured, uploadCloudinaryImage } from "../config/cloudinary.js";
 
 const ALLOWED_MIME_TYPES = new Set([
   "image/jpeg",
@@ -59,19 +60,33 @@ export async function uploadAvatar(req, res, next) {
       return res.status(400).json({ message: "Image files cannot exceed 3MB." });
     }
 
-    const user = req.user;
-    const finalContentType = contentType || "image/jpeg";
+    if (!isCloudinaryConfigured()) {
+      return res.status(503).json({ message: "Image uploads are not configured. Add Cloudinary credentials to the API environment." });
+    }
 
-    user.avatarData = buffer;
-    user.avatarFileName = safeFileName;
-    user.avatarContentType = finalContentType;
-    user.avatarUrl = `/api/avatars/${user.role}/${user._id}`;
+    const user = req.user;
+    const folder = "intelligent-hiring/avatars";
+    let uploaded;
+    try {
+      uploaded = await uploadCloudinaryImage(buffer, {
+        folder,
+        publicId: `${user.role}-${user._id}`,
+      });
+    } catch (error) {
+      console.error("Cloudinary avatar upload failed:", error.message);
+      return res.status(502).json({ message: "Could not upload image to Cloudinary. Check the Cloudinary configuration." });
+    }
+
+    user.avatarData = undefined;
+    user.avatarFileName = "";
+    user.avatarContentType = contentType || "image/jpeg";
+    user.avatarUrl = uploaded.secure_url;
     await user.save();
 
     res.json({
       message: "Profile photo uploaded successfully.",
       avatarUrl: user.avatarUrl,
-      fileName: user.avatarFileName,
+      fileName: safeFileName,
       fileSize: buffer.length,
       user: user.toSafeJSON(),
     });
@@ -83,6 +98,7 @@ export async function uploadAvatar(req, res, next) {
 export async function removeAvatar(req, res, next) {
   try {
     const user = req.user;
+    await deleteCloudinaryAsset(user.avatarUrl, "image");
     user.avatarData = undefined;
     user.avatarFileName = "";
     user.avatarContentType = "image/jpeg";

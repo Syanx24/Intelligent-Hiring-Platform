@@ -2049,6 +2049,13 @@ a {
   background: var(--emerald-600);
 }
 
+.modal-btn-apply.already-applied,
+.modal-btn-apply.already-applied:hover {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--text-primary);
+}
+
 /* Apply Form Fields */
 .apply-form-fields {
   display: flex;
@@ -3698,7 +3705,7 @@ button, a { transition: color .16s ease, background-color .16s ease, border-colo
   .rw-shell .rw-topbar { top: 60px; }
 }
 
-/* Standalone GitHub score test fixture in recruiter candidate profiles */
+/* GitHub public profile summary in recruiter candidate profiles */
 .rw-profile-head-actions { display: flex; align-items: center; gap: 7px; margin-left: auto; margin-right: 32px; }
 .rw-profile-head-actions .rw-compare-btn { margin: 0; }
 .rw-profile-head-actions .rw-button:disabled { opacity: .6; cursor: wait; }
@@ -3707,15 +3714,30 @@ button, a { transition: color .16s ease, background-color .16s ease, border-colo
 .rw-github-demo-head b, .rw-github-demo-head small { display: block; }
 .rw-github-demo-head b { color: #273444; font-size: 12px; }
 .rw-github-demo-head small { margin-top: 4px; color: #687586; font-size: 10px; font-weight: 500; }
-.rw-github-demo-head strong { color: #315fce; font-size: 22px; }
-.rw-github-demo-head strong small { display: inline; margin-left: 2px; }
-.rw-github-demo>p { margin: 10px 0 14px; color: #687586; font-size: 10px; }
-.rw-github-demo-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; }
-.rw-github-demo-metrics>div { display: grid; grid-template-columns: 1fr auto; gap: 5px 8px; align-items: center; color: #536171; font-size: 10px; text-transform: capitalize; }
-.rw-github-demo-metrics b { color: #273444; font-size: 10px; }
-.rw-github-demo-metrics i { grid-column: 1 / -1; display: block; height: 5px; overflow: hidden; border-radius: 999px; background: #e5eaf2; }
-.rw-github-demo-metrics i span { display: block; height: 100%; border-radius: inherit; background: #5279d2; }
+.rw-github-summary-user { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
+.rw-github-summary-user img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; }
+.rw-github-summary-user b, .rw-github-summary-user small { display: block; }
+.rw-github-summary-user b { color: #273444; font-size: 12px; }
+.rw-github-summary-user small { margin-top: 4px; color: #687586; font-size: 10px; }
+.rw-github-summary p { margin: 10px 0; color: #536171; font-size: 11px; }
+.rw-github-summary ul { display: grid; gap: 5px; margin: 0; padding: 0; list-style: none; color: #687586; font-size: 10px; }
+.rw-github-summary a { color: #315fce; text-decoration: none; }
+.rw-success-toast { position: fixed; right: 24px; bottom: 24px; z-index: 100; display: flex; align-items: center; gap: 10px; padding: 14px 18px; border: 1px solid #b9e8d3; border-radius: 12px; background: #f0fdf6; color: #16734a; box-shadow: 0 12px 32px rgb(32 42 53 / 16%); font-size: 13px; font-weight: 700; animation: rw-toast-in .22s ease-out both; }
+.rw-profile-modal { animation: rw-modal-in .2s ease-out both; }
+.rw-profile-actions button:not(:disabled):active, .rw-profile-head-actions button:not(:disabled):active { transform: scale(.96); }
+.rw-profile-actions button:disabled { opacity: .65; cursor: wait; }
+.rw-avatar-image { overflow: hidden; }
+.rw-avatar-image img { width: 100%; height: 100%; object-fit: cover; }
+@keyframes rw-toast-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes rw-modal-in { from { opacity: 0; transform: translateY(10px) scale(.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @media (max-width: 620px) {
   .rw-profile-head-actions { flex-wrap: wrap; margin-right: 30px; }
-  .rw-github-demo-metrics { grid-template-columns: 1fr; }
+  .rw-success-toast { right: 14px; bottom: 14px; left: 14px; justify-content: center; }
 }
+
+/* Consistent shared controls and surfaces across public, candidate, and recruiter pages */
+:root { --app-radius-card: 16px; --app-radius-control: 10px; --app-shadow-card: 0 8px 24px rgb(32 42 53 / 5%); }
+.candidate-dashboard :is(section, article)[class*="rounded-2xl"], .site-shell main > section > div[class*="rounded-2xl"] { border-color: var(--border-light); }
+.site-shell :is(button, a), .candidate-dashboard :is(button, a) { transition: color .16s ease, background-color .16s ease, border-color .16s ease, box-shadow .16s ease, transform .16s ease; }
+.site-shell :is(input, select, textarea), .candidate-dashboard :is(input, select, textarea) { border-color: var(--border-medium); }
+.site-brand-image { background: #fff; border: 1px solid var(--border-light); }

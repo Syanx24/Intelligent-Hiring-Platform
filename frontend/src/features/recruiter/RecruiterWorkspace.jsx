@@ -21,6 +21,7 @@ import {
   RecruiterSearch as SearchBox,
 } from "../../components/recruiter/RecruiterControls.jsx";
 import { updateCompanyJob } from "../../service/recruiter/recruiterAPI.js";
+import { getGithubSummary } from "../../service/candidate/candidateAPI.js";
 import SidebarRecruiter from "../../components/recruiter/SidebarRecruiter.jsx";
 import { CiEdit } from "react-icons/ci";
 import { AiTwotoneDelete } from "react-icons/ai";
@@ -234,8 +235,8 @@ function Dashboard({ jobs, apps, onNavigate }) {
           </div>
           {apps.slice(0, 4).map((a) => (
             <div className="rw-mini-app" key={a._id}>
-              <span className="rw-avatar">
-                {(a.name || "?")
+              <span className="rw-avatar rw-avatar-image">
+                {a.candidateUser?.avatarUrl ? <img src={a.candidateUser.avatarUrl} alt="" /> : (a.name || "?")
                   .split(" ")
                   .map((x) => x[0])
                   .slice(0, 2)
@@ -285,6 +286,10 @@ export default function RecruiterWorkspace({
   const [compare, setCompare] = useState(null);
   const [selected, setSelected] = useState([]);
   const [appliedCompare, setAppliedCompare] = useState(false);
+  const [githubSummary, setGithubSummary] = useState(null);
+  const [githubSummaryLoading, setGithubSummaryLoading] = useState(false);
+  const [actionNotice, setActionNotice] = useState("");
+  const [actionBusy, setActionBusy] = useState(false);
   const reload = () => {
     setLoading(true);
     getCompanyApplications()
@@ -372,15 +377,33 @@ export default function RecruiterWorkspace({
         ),
     [jobs, query, filters, sort],
   );
-  const changeStatus = async (app, status) => {
+  const changeStatus = async (app, status, successMessage = `Candidate moved to ${status.toLowerCase()}.`) => {
+    setActionBusy(true);
     try {
       await updateApplicationStatus(app._id, status);
       setApps((xs) =>
         xs.map((x) => (x._id === app._id ? { ...x, status } : x)),
       );
       if (profile?._id === app._id) setProfile({ ...profile, status });
+      setActionNotice(successMessage);
+      setProfile(null);
+      window.setTimeout(() => setActionNotice(""), 3500);
+      setActionBusy(false);
+      return true;
     } catch (e) {
       setError(e.message || "Could not update status.");
+      setActionBusy(false);
+      return false;
+    }
+  };
+  const loadGithubSummary = async (url) => {
+    setGithubSummaryLoading(true);
+    try {
+      setGithubSummary(await getGithubSummary(url));
+    } catch (e) {
+      setError(e.message || "Could not load GitHub summary.");
+    } finally {
+      setGithubSummaryLoading(false);
     }
   };
   const toggleJobStatus = async (job) => {
@@ -679,8 +702,8 @@ export default function RecruiterWorkspace({
                         <tr key={a._id}>
                           <td>
                             <div className="rw-person">
-                              <span className="rw-avatar">
-                                {(a.name || "?")
+                              <span className="rw-avatar rw-avatar-image">
+                                {c.avatarUrl ? <img src={c.avatarUrl} alt="" /> : (a.name || "?")
                                   .split(" ")
                                   .map((x) => x[0])
                                   .slice(0, 2)
@@ -723,6 +746,7 @@ export default function RecruiterWorkspace({
                             <button
                               className="rw-link"
                               onClick={() => {
+                                setGithubSummary(null);
                                 setProfile(a);
                               }}
                             >
@@ -786,8 +810,8 @@ export default function RecruiterWorkspace({
               <X size={18} />
             </button>
             <div className="rw-profile-top">
-              <span className="rw-profile-avatar">
-                {(profile.name || "?")
+              <span className="rw-profile-avatar rw-avatar-image">
+                {profile.candidateUser?.avatarUrl ? <img src={profile.candidateUser.avatarUrl} alt="" /> : (profile.name || "?")
                   .split(" ")
                   .map((x) => x[0])
                   .slice(0, 2)
@@ -809,6 +833,7 @@ export default function RecruiterWorkspace({
                     setCompare(profile);
                     setSelected([profile._id]);
                     setAppliedCompare(false);
+                    setProfile(null);
                   }}
                 >
                   Compare <Users size={15} />
@@ -821,38 +846,16 @@ export default function RecruiterWorkspace({
                 Applied {new Date(profile.createdAt).toLocaleDateString()}
               </span>
             </div>
-            {profile.candidateUser?.githubScore && (
-              <section className="rw-github-demo">
-                <div className="rw-github-demo-head">
-                  <div>
-                    <b>GitHub evidence score</b>
-                    <small>
-                      @{profile.candidateUser.githubScore.githubUsername} · {profile.candidateUser.githubScore.analysisVersion === "test-1.0" ? "test record" : "database score"}
-                    </small>
-                  </div>
-                  <strong>
-                    {profile.candidateUser.githubScore.evidenceScore}
-                    <small>/100</small>
-                  </strong>
-                </div>
-                <div className="rw-github-demo-metrics">
-                  {["projectEvidence", "technicalBreadth", "recentActivity", "collaborationEvidence", "originalProjectPortfolio"].map((key) => [key, profile.candidateUser.githubScore[key]])
-                    .filter(
-                      ([key, value]) =>
-                        value != null,
-                    )
-                    .map(([key, value]) => (
-                      <div key={key}>
-                        <span>{key.replace(/([A-Z])/g, " $1")}</span>
-                        <b>{value}/100</b>
-                        <i>
-                          <span style={{ width: `${value}%` }} />
-                        </i>
-                      </div>
-                    ))}
-                </div>
-              </section>
-            )}
+            {profile.candidateUser?.githubUrl && <section className="rw-github-demo">
+              <div className="rw-github-demo-head"><div><b>GitHub Summary</b><small>Public profile information from GitHub</small></div>
+                <button className="rw-button" disabled={githubSummaryLoading} onClick={() => loadGithubSummary(profile.candidateUser.githubUrl)}>{githubSummaryLoading ? "Loading…" : "GitHub summary"}</button>
+              </div>
+              {githubSummary && <div className="rw-github-summary">
+                <div className="rw-github-summary-user">{githubSummary.avatarUrl && <img src={githubSummary.avatarUrl} alt="" />}<div><b>{githubSummary.name || githubSummary.login}</b><small>@{githubSummary.login} · {githubSummary.publicRepos} public repos · {githubSummary.followers} followers</small></div></div>
+                {githubSummary.bio && <p>{githubSummary.bio}</p>}
+                {githubSummary.repositories?.length > 0 && <ul>{githubSummary.repositories.slice(0, 3).map((repo) => <li key={repo.url}><a href={repo.url} target="_blank" rel="noreferrer">{repo.name}</a>{repo.language ? ` · ${repo.language}` : ""}{repo.stars ? ` · ★ ${repo.stars}` : ""}</li>)}</ul>}
+              </div>}
+            </section>}
             <div className="rw-profile-grid">
               {[
                 ["Email", profile.email],
@@ -911,34 +914,35 @@ export default function RecruiterWorkspace({
             <div className="rw-profile-actions">
               <button
                 className="rw-button"
-                onClick={() => setError("Deep check is under development.")}
+                disabled={actionBusy}
+                onClick={() => changeStatus(profile, "Under review", "Candidate moved to deep review.")}
               >
-                Deep check <small>Under development</small>
+                Deep check
               </button>
               <button
                 className="rw-button"
-                onClick={() =>
-                  setError("Test management is under development.")
-                }
+                disabled={actionBusy}
+                onClick={() => changeStatus(profile, "Under review", "Candidate moved to the test stage.")}
               >
                 Test
               </button>
               <button
                 className="rw-button"
-                onClick={() =>
-                  setError("Interview management is under development.")
-                }
+                disabled={actionBusy}
+                onClick={() => changeStatus(profile, "Interviewing", "Candidate moved to interviewing.")}
               >
                 Interview
               </button>
               <button
                 className="rw-primary"
+                disabled={actionBusy}
                 onClick={() => changeStatus(profile, "Accepted")}
               >
                 Approve
               </button>
               <button
                 className="rw-reject"
+                disabled={actionBusy}
                 onClick={() => changeStatus(profile, "Rejected")}
               >
                 Reject
@@ -947,6 +951,7 @@ export default function RecruiterWorkspace({
           </section>
         </div>
       )}
+      {actionNotice && <div className="rw-success-toast" role="status"><Check size={17} />{actionNotice}</div>}
       {compare !== null && (
         <div className="rw-overlay rw-compare-overlay">
           <section className="rw-compare-modal">
@@ -996,8 +1001,6 @@ export default function RecruiterWorkspace({
                       "Experience",
                       "Skills",
                       "GitHub",
-                      "Pros",
-                      "Cons",
                     ].map((row) => (
                       <tr key={row}>
                         <th>{row}</th>
@@ -1022,18 +1025,8 @@ export default function RecruiterWorkspace({
                                   ) : (
                                     "Not linked"
                                   )
-                                ) : row === "Pros" ? (
-                                  [
-                                    `${val(c.experienceYears)} years experience`,
-                                    `${skills.length} listed skills`,
-                                    c.githubUrl
-                                      ? "GitHub available"
-                                      : "Profile details available",
-                                  ].join(" · ")
-                                ) : !c.githubUrl ? (
-                                  "GitHub profile missing"
                                 ) : (
-                                  "No obvious gaps in provided profile"
+                                  c.githubUrl ? "Linked" : "Not linked"
                                 )}
                               </td>
                             );

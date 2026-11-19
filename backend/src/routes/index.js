@@ -16,6 +16,7 @@ import {
 } from "../controllers/auth.js";
 import {
   getCandidate,
+  removeCandidateResume,
   streamCandidateResume,
   updateCandidateProfile,
   uploadCandidateResume,
@@ -38,7 +39,14 @@ import {
   updateRecruiterProfile,
 } from "../controllers/recruiterController.js";
 import { authRequired, optionalAuth, roleRequired } from "../middleware/auth.js";
-import { getGithubScoreTestCase, getMyGithubScore } from "../controllers/githubScoreController.js";
+import { getGithubSummary } from "../controllers/githubSummaryController.js";
+import {
+  aboutImagesAdminRequired,
+  deleteAboutImage,
+  listAboutImages,
+  uploadAboutImage,
+  verifyAboutImagesAdmin,
+} from "../controllers/aboutImageController.js";
 import {
   createPlan,
   listPlans,
@@ -49,6 +57,12 @@ const router = Router();
 
 // Service health endpoint.
 router.get("/health", (_req, res) => res.json({ status: "ok" }));
+
+// About Us images are public to read; upload and delete require the admin password.
+router.get("/about/images", listAboutImages);
+router.post("/about/images/admin/verify", aboutImagesAdminRequired, verifyAboutImagesAdmin);
+router.post("/about/images", aboutImagesAdminRequired, uploadAboutImage);
+router.delete("/about/images/:id", aboutImagesAdminRequired, deleteAboutImage);
 
 // Route shared account endpoints to the controller for the signed-in role.
 function accountController(req, res, next, candidateController, recruiterController) {
@@ -76,7 +90,8 @@ router.put(
 router.post("/auth/upload-avatar", authRequired, uploadAvatar);
 router.delete("/auth/avatar", authRequired, removeAvatar);
 router.post("/auth/upload-resume", authRequired, roleRequired("candidate"), uploadCandidateResume);
-router.get("/github-score/me", authRequired, roleRequired("candidate"), getMyGithubScore);
+router.delete("/auth/resume", authRequired, roleRequired("candidate"), removeCandidateResume);
+router.get("/github-summary", authRequired, getGithubSummary);
 
 // Public profile avatar streaming routes.
 router.get("/avatars/:role/:id", streamAvatar);
@@ -97,9 +112,6 @@ router.get("/applications/candidate/my-applications", authRequired, roleRequired
 router.get("/applications/company/job/:jobId", authRequired, roleRequired("company"), getJobApplicants);
 router.get("/applications/company/all", authRequired, roleRequired("company"), getCompanyApplications);
 router.patch("/applications/:id/status", authRequired, roleRequired("company"), updateApplicationStatus);
-
-// Recruiter-only standalone fixture for the GitHub score UI preview.
-router.get("/github-score/test-case", authRequired, roleRequired("company"), getGithubScoreTestCase);
 
 // Resume file streaming routes.
 router.get("/resumes/user/:candidateId", streamCandidateResume);

@@ -1,4 +1,5 @@
 import { ArrowRight, Briefcase, LogOut, UserRound } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const candidateLinks = [
   ["jobs", "Jobs"],
@@ -29,12 +30,12 @@ export default function Header({
   return (
     <header className="site-header sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
       <div className="site-header-inner mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
-        <a href={homeHref} className="site-brand flex shrink-0 items-center gap-2.5" aria-label="HireMe home">
-          <span className="site-brand-mark grid h-9 w-9 place-items-center rounded-xl bg-slate-900 font-mono text-sm font-bold text-white">λ</span>
+        <Link to={homeHref} className="site-brand flex shrink-0 items-center gap-2.5" aria-label="HireMe home">
+          <img src={import.meta.env.VITE_APP_LOGO_URL || "/logo.svg"} alt="" className="site-brand-mark site-brand-image h-9 w-9 rounded-xl object-cover" />
           <span className="flex items-center gap-1.5 text-[17px] font-semibold tracking-tight text-slate-900">
-            HireMe <span className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] font-medium tracking-wide text-slate-600">signal</span>
+            HireMe <span className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] font-medium tracking-wide text-slate-600">NexTech99</span>
           </span>
-        </a>
+        </Link>
 
         <nav className={`site-header-nav items-center gap-1 ${isCandidate && user ? "flex min-w-0 flex-1 overflow-x-auto md:flex-none" : "hidden md:flex"}`} aria-label="Main navigation">
           {isCandidate && user ? candidateLinks.map(([key, label]) => (
@@ -49,12 +50,12 @@ export default function Header({
             <span className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">Recruiter workspace</span>
           ) : (
             <>
-              <a href="/#catalog" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900">Explore roles</a>
+              <Link to="/#catalog" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900">Explore roles</Link>
               {page === "home" && <>
-                <a href="/#comparison" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900">Why HireMe</a>
-                <a href="/#roadmap" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900">Roadmap</a>
+                <Link to="/#comparison" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900">Why HireMe</Link>
+                <Link to="/#roadmap" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900">Roadmap</Link>
               </>}
-              <a href="/about" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900">About us</a>
+              <Link to="/about" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900">About us</Link>
             </>
           )}
         </nav>
@@ -88,9 +89,9 @@ export default function Header({
               </button>
             </>
           ) : (
-            <a href={isRecruiter ? "/" : "/#catalog"} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            <Link to={isRecruiter ? "/" : "/#catalog"} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
               {isRecruiter ? "Back to home" : "Browse jobs"}<ArrowRight size={15} />
-            </a>
+            </Link>
           )}
         </div>
       </div>

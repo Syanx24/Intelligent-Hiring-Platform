@@ -34,7 +34,7 @@ import Header from "../components/Header.jsx";
 import { ApplicationModal, JobDetailsModal } from "../components/candidate/JobModals.jsx";
 import { CompanyMark, timeAgo } from "../components/candidate/jobUtils.jsx";
 import Improvement from "../features/improvements/Improvement.jsx";
-import { getStoredUser, setStoredAuth } from "../service/apiClient.js";
+import { clearStoredAuth, getStoredUser, setStoredAuth } from "../service/apiClient.js";
 import { submitApplication } from "../service/application/jobApplicationAPI.js";
 import { getCurrentUser } from "../service/authAPI.js";
 import { getJobs } from "../service/JobList/jobListAPI.js";
@@ -331,7 +331,15 @@ export default function LandingPage() {
   return (
     <div className="site-shell min-h-screen w-full overflow-x-hidden bg-[#faf9f6] text-[#18181b] antialiased selection:bg-[#4f46e5] selection:text-white">
       {/* 1. Brand Header */}
-      <Header onOpenAuth={(role) => setAuth({ isOpen: true, role, oauthError: "" })} />
+      <Header
+        user={currentUser}
+        onOpenAuth={(role) => setAuth({ isOpen: true, role, oauthError: "" })}
+        onProfileClick={() => navigate(currentUser?.role === "company" ? "/recruiter" : "/candidate")}
+        onLogout={() => {
+          clearStoredAuth();
+          setCurrentUser(null);
+        }}
+      />
 
       <main id="home" className="flex flex-col items-center">
         {/* ==========================================================================
@@ -878,7 +886,7 @@ export default function LandingPage() {
 
 
         {/* ==========================================================================
-            6. COMPARISON MATRIX (Traditional Hiring vs. HireMe Signal)
+            6. COMPARISON MATRIX (Traditional Hiring vs. HireMe NexTech99)
             ========================================================================== */}
         <section id="comparison" className="w-full max-w-5xl px-4 py-8 sm:px-6">
           <div className="text-left mb-6">
@@ -886,7 +894,7 @@ export default function LandingPage() {
               Why Teams Switch
             </span>
             <h2 className="mt-1 font-sans text-2xl sm:text-3xl font-bold tracking-tight text-[#18181b]">
-              Traditional Hiring vs. HireMe Signal
+              Traditional Hiring vs. HireMe NexTech99
             </h2>
             <p className="mt-1 text-sm text-[#52525b]">
               Stop filtering on puzzle agility. Start evaluating production capability.
@@ -906,7 +914,7 @@ export default function LandingPage() {
               </div>
               <div className="border-t sm:border-t-0 sm:border-l border-[#e4e4e7] pt-3 sm:pt-0 sm:pl-4">
                 <span className="flex items-center gap-1.5 font-mono text-[11px] font-semibold text-[#4f46e5]">
-                  <span>✓</span> HireMe Signal
+                  <span>✓</span> HireMe NexTech99
                 </span>
                 <p className="mt-1 text-[13px] font-semibold text-[#18181b]">
                   Instant GitHub deep-dive and AST parsing in 12 seconds

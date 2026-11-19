@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 import Candidate from "../models/Candidate.js";
-import { refreshGithubScore } from "./githubScoreController.js";
-import GithubAnalysis from "../models/githubScore.js";
+import { deleteCloudinaryAsset, isCloudinaryConfigured, uploadCloudinaryPdf } from "../config/cloudinary.js";
 
 export function getCandidate(req, res) {
   res.json(req.user.toSafeJSON());
@@ -11,13 +10,13 @@ export async function updateCandidateProfile(req, res, next) {
   try {
     const candidate = req.user;
     const body = req.body ?? {};
-    const previousGithubUrl = candidate.githubUrl;
     if (typeof body.name === "string" && body.name.trim()) candidate.name = body.name.trim();
     if (body.avatarUrl !== undefined) {
       candidate.avatarUrl = String(body.avatarUrl).trim();
       if (!candidate.avatarUrl) {
         candidate.avatarData = undefined;
         candidate.avatarFileName = "";
+        candidate.avatarContentType = "image/jpeg";
       }
     }
     if (body.headline !== undefined) candidate.headline = String(body.headline).trim();
@@ -30,11 +29,7 @@ export async function updateCandidateProfile(req, res, next) {
     if (Array.isArray(body.skills)) candidate.skills = body.skills.map((skill) => String(skill).trim()).filter(Boolean);
 
     await candidate.save();
-    const existingGithubScore = await GithubAnalysis.findOne({ candidateId: candidate._id }).lean();
-    const githubScore = !candidate.githubUrl || candidate.githubUrl !== previousGithubUrl || !existingGithubScore || existingGithubScore.evidenceScore == null
-      ? await refreshGithubScore(candidate)
-      : existingGithubScore;
-    res.json({ message: "Profile updated successfully.", user: candidate.toSafeJSON(), githubScore });
+    res.json({ message: "Profile updated successfully.", user: candidate.toSafeJSON() });
   } catch (error) {
     next(error);
   }
@@ -60,11 +55,24 @@ export async function uploadCandidateResume(req, res, next) {
     }
 
     const candidate = req.user;
-    candidate.resumeData = buffer;
-    candidate.resumeFileName = safeFileName;
+    if (!isCloudinaryConfigured()) {
+      return res.status(503).json({ message: "Resume uploads are not configured. Add Cloudinary credentials to the API environment." });
+    }
+    let uploaded;
+    try {
+      uploaded = await uploadCloudinaryPdf(buffer, {
+        folder: "intelligent-hiring/resumes",
+        publicId: `candidate-${candidate._id}.pdf`,
+      });
+    } catch (error) {
+      console.error("Cloudinary resume upload failed:", error.message);
+      return res.status(502).json({ message: "Could not upload resume to Cloudinary. Check the Cloudinary configuration." });
+    }
+    candidate.resumeData = undefined;
+    candidate.resumeFileName = "";
     candidate.resumeFileSize = buffer.length;
     candidate.resumeContentType = "application/pdf";
-    candidate.resumeUrl = `/api/resumes/user/${candidate._id}`;
+    candidate.resumeUrl = uploaded.secure_url;
     await candidate.save();
 
     res.json({
@@ -74,6 +82,23 @@ export async function uploadCandidateResume(req, res, next) {
       fileSize: buffer.length,
       user: candidate.toSafeJSON(),
     });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function removeCandidateResume(req, res, next) {
+  try {
+    const candidate = req.user;
+    await deleteCloudinaryAsset(candidate.resumeUrl, "raw");
+    candidate.resumeUrl = "";
+    candidate.resumeData = undefined;
+    candidate.resumeFileName = "";
+    candidate.resumeFileSize = 0;
+    candidate.resumeContentType = "application/pdf";
+    await candidate.save();
+
+    res.json({ message: "Resume removed successfully.", resumeUrl: "", user: candidate.toSafeJSON() });
   } catch (error) {
     next(error);
   }
@@ -89,9 +114,12 @@ export async function streamCandidateResume(req, res, next) {
     const candidate = await Candidate.findById(candidateId).select(
       "+resumeData +resumeFileName +resumeFileSize +resumeContentType",
     );
-    if (!candidate?.resumeData) {
+    if (!candidate) {
       return res.status(404).json({ message: "No resume found for this candidate." });
     }
+
+    if (candidate.resumeUrl?.includes("res.cloudinary.com/")) return res.redirect(candidate.resumeUrl);
+    if (!candidate.resumeData) return res.status(404).json({ message: "No resume found for this candidate." });
 
     res.setHeader("Content-Type", candidate.resumeContentType || "application/pdf");
     res.setHeader("Content-Disposition", `inline; filename="${encodeURIComponent(candidate.resumeFileName || "resume.pdf")}"`);
