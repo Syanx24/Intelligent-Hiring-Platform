@@ -31,6 +31,37 @@ export async function getGithubSummary(req, res, next) {
 
     const user = await userResponse.json();
     const repos = await reposResponse.json();
+    const repositories = await Promise.all(repos.map(async (repo) => {
+      const repositoryPath = `https://api.github.com/repos/${encodeURIComponent(username)}/${encodeURIComponent(repo.name)}`;
+      const [commitsResponse, pullsResponse] = await Promise.all([
+        fetch(`${repositoryPath}/commits?per_page=1`, { headers }),
+        fetch(`${repositoryPath}/pulls?state=all&per_page=1`, { headers }),
+      ]);
+      const getCount = async (response) => {
+        if (!response.ok) return null;
+        const linkHeader = response.headers.get("link") || "";
+        const lastPage = linkHeader.match(/[?&]page=(\d+)[^>]*>\s*;\s*rel="last"/i);
+        if (lastPage) return Number(lastPage[1]);
+        const firstPage = await response.json();
+        return Array.isArray(firstPage) ? firstPage.length : null;
+      };
+      const [commitsCount, pullRequestsCount] = await Promise.all([
+        getCount(commitsResponse),
+        getCount(pullsResponse),
+      ]);
+      return {
+        name: repo.name,
+        url: repo.html_url,
+        description: repo.description,
+        language: repo.language,
+        stars: repo.stargazers_count,
+        forks: repo.forks_count,
+        updatedAt: repo.updated_at,
+        commitsCount,
+        pullRequestsCount,
+      };
+    }));
+
     return res.json({
       login: user.login,
       name: user.name,
@@ -44,9 +75,8 @@ export async function getGithubSummary(req, res, next) {
       followers: user.followers,
       following: user.following,
       createdAt: user.created_at,
-      repositories: repos.map(({ name, html_url, description, language, stargazers_count, updated_at }) => ({
-        name, url: html_url, description, language, stars: stargazers_count, updatedAt: updated_at,
-      })),
+      totalStars: repositories.reduce((total, repo) => total + (repo.stars || 0), 0),
+      repositories,
     });
   } catch (error) {
     next(error);

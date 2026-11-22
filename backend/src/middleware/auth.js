@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import Candidate from "../models/Candidate.js";
 import Recruiter from "../models/Recruiter.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || "northstar_intelligent_hiring_secure_jwt_token_secret_key_2026";
+const JWT_SECRET = process.env.JWT_SECRET || "hire_me_jwt_token_secret_key_2026";
 
 async function findAccount(decoded) {
   if (decoded.role === "candidate") return Candidate.findById(decoded.userId);

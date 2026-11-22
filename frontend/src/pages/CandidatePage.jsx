@@ -10,6 +10,7 @@ import {
   Check,
   CheckCircle2,
   ChevronRight,
+  ChevronDown,
   Clock,
   Compass,
   ExternalLink,
@@ -45,7 +46,7 @@ import {
   updateUserProfile,
   uploadProfileAvatar,
 } from "../service/authAPI.js";
-import { getGithubSummary, removeCandidateResume, uploadCandidateResume } from "../service/candidate/candidateAPI.js";
+import { removeCandidateResume, uploadCandidateResume } from "../service/candidate/candidateAPI.js";
 import { getJobs } from "../service/JobList/jobListAPI.js";
 import {
   getMyApplications,
@@ -56,6 +57,7 @@ import {
   ApplicationModal,
   JobDetailsModal,
 } from "../components/candidate/JobModals.jsx";
+import GitHubSummaryCard from "../components/GitHubSummaryCard.jsx";
 
 const statusBadges = {
   Applied: {
@@ -118,7 +120,7 @@ const statusBadges = {
     bg: "bg-rose-50 text-rose-700 border-rose-200",
     dot: "bg-rose-500",
     label: "Rejected",
-    emoji: "❌",
+    emoji: "\u274C",
     step: 4,
   },
 };
@@ -164,6 +166,7 @@ export default function CandidatePage({
 
   // Dashboard Active Tab
   const [activeTab, setActiveTab] = useState("jobs"); // "jobs" | "applications" | "profile"
+  const [showCompletionDetails, setShowCompletionDetails] = useState(false);
 
   // Dashboard Jobs State
   const [jobs, setJobs] = useState([]);
@@ -197,10 +200,6 @@ export default function CandidatePage({
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [profileSuccess, setProfileSuccess] = useState("");
-  const [githubSummary, setGithubSummary] = useState(null);
-  const [githubSummaryMinimized, setGithubSummaryMinimized] = useState(false);
-  const [githubSummaryLoading, setGithubSummaryLoading] = useState(false);
-  const [githubSummaryError, setGithubSummaryError] = useState("");
 
   // Sync profile form when user object updates
   useEffect(() => {
@@ -577,7 +576,7 @@ export default function CandidatePage({
     if (!user) return { score: 0, items: [] };
     const items = [
       { label: "Account created", done: true, weight: 15 },
-      { label: "Profile photo", done: Boolean(user.avatarUrl), weight: 15 },
+      { label: "Profile photo", done: Boolean(user.avatarUrl), weight: 10 },
       { label: "Engineering headline", done: Boolean(user.headline), weight: 15 },
       { label: "GitHub profile link", done: Boolean(user.githubUrl), weight: 20 },
       { label: "Technical skills tags", done: Boolean(user.skills && user.skills.length > 0), weight: 15 },
@@ -960,9 +959,6 @@ export default function CandidatePage({
                   <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
                     {user.name || "Engineering Candidate"}
                   </h1>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-500/30 px-2 py-0.5 rounded-md">
-                    <CheckCircle2 size={11} /> Verified
-                  </span>
                 </div>
 
                 <p className="text-xs sm:text-sm text-slate-300 font-medium">
@@ -1226,6 +1222,17 @@ export default function CandidatePage({
                           <span>View Details</span>
                         </button>
 
+                        {job.companyUser?.companyWebsite && (
+                          <a
+                            href={job.companyUser.companyWebsite}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-emerald-700 transition"
+                          >
+                            <Globe size={12} /> Visit company website <ExternalLink size={10} />
+                          </a>
+                        )}
+
                         {isApplied ? (
                           <button
                             type="button"
@@ -1346,6 +1353,11 @@ export default function CandidatePage({
                                   <span className="font-bold text-emerald-600">{job.salary}</span>
                                 </>
                               )}
+                              {job.companyUser?.companyWebsite && (
+                                <a href={job.companyUser.companyWebsite} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-slate-500 hover:text-emerald-700">
+                                  <Globe size={11} /> Visit company website <ExternalLink size={9} />
+                                </a>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1414,16 +1426,6 @@ export default function CandidatePage({
                         <span className="inline-flex items-center gap-1 text-[11px]">
                           <Clock size={11} /> Applied {timeAgo(app.createdAt)}
                         </span>
-                        {app.githubUrl && (
-                          <a
-                            href={app.githubUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 hover:text-slate-900"
-                          >
-                            <Github size={11} /> Submitted GitHub <ExternalLink size={9} />
-                          </a>
-                        )}
                       </div>
                     </div>
                   );
@@ -1462,26 +1464,26 @@ export default function CandidatePage({
                   Your engineering stack, telemetry, and portfolio visible to hiring leaders.
                 </p>
               </div>
-              <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
-                {profileCompletion.score}% Complete
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">{profileCompletion.score}% Complete</span>
+                <button type="button" onClick={() => setShowCompletionDetails((open) => !open)} aria-expanded={showCompletionDetails} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50">
+                  {showCompletionDetails ? "Hide details" : "Completion details"}
+                  <ChevronDown size={13} className={`transition-transform ${showCompletionDetails ? "rotate-180" : ""}`} />
+                </button>
+              </div>
             </div>
 
-            {/* Checklist items */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-3 bg-slate-50/80 rounded-2xl border border-slate-100 text-xs">
-              {profileCompletion.items.map((item) => (
-                <div key={item.label} className="flex items-center gap-1.5">
-                  {item.done ? (
-                    <CheckCircle2 size={13} className="text-emerald-600 shrink-0" />
-                  ) : (
-                    <span className="w-3.5 h-3.5 rounded-full border border-slate-300 shrink-0" />
-                  )}
-                  <span className={item.done ? "text-slate-700 font-medium" : "text-slate-400"}>
-                    {item.label}
-                  </span>
-                </div>
-              ))}
-            </div>
+            {showCompletionDetails && (
+              <div className="grid grid-cols-1 gap-2 rounded-2xl border border-slate-100 bg-slate-50/80 p-3 text-xs sm:grid-cols-2">
+                {profileCompletion.items.map((item) => (
+                  <div key={item.label} className="flex items-center gap-1.5">
+                    {item.done ? <CheckCircle2 size={13} className="shrink-0 text-emerald-600" /> : <span className="h-3.5 w-3.5 shrink-0 rounded-full border border-slate-300" />}
+                    <span className={item.done ? "font-medium text-slate-700" : "text-slate-400"}>{item.label}</span>
+                    <span className={`ml-auto ${item.done ? "text-emerald-700" : "text-slate-400"}`}>{item.done ? "Done" : "Pending"}</span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {profileError && (
               <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs">
@@ -1495,47 +1497,7 @@ export default function CandidatePage({
               </div>
             )}
 
-            <section className="github-summary-card p-4 bg-slate-50 border border-slate-200 rounded-2xl">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600">GitHub Summary</p>
-                  <p className="text-xs text-slate-500 mt-1">View public profile details and recently updated repositories.</p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  {githubSummary && (
-                    <button
-                      type="button"
-                      onClick={() => setGithubSummaryMinimized((minimized) => !minimized)}
-                      className="px-3 py-2 text-xs font-bold text-white bg-slate-700 rounded-xl hover:bg-slate-600"
-                      aria-expanded={!githubSummaryMinimized}
-                    >
-                      {githubSummaryMinimized ? "Show summary" : "Minimize summary"}
-                    </button>
-                  )}
-                {profileGithub.trim() ? (
-                  <button type="button" disabled={githubSummaryLoading} onClick={async () => {
-                    setGithubSummaryLoading(true); setGithubSummaryError("");
-                    try { setGithubSummary(await getGithubSummary(profileGithub.trim())); }
-                    catch (error) { setGithubSummaryError(error.message || "Could not load GitHub summary."); }
-                    finally { setGithubSummaryLoading(false); }
-                  }} className="shrink-0 px-3 py-2 text-xs font-bold text-white bg-slate-900 rounded-xl hover:bg-slate-800 disabled:opacity-60">
-                    {githubSummaryLoading ? "Loading…" : githubSummary ? "Refresh summary" : "GitHub summary"}
-                  </button>
-                ) : <button type="button" onClick={() => document.getElementById("candidate-github-url")?.focus()} className="px-3 py-2 text-xs font-bold text-white bg-slate-900 rounded-xl hover:bg-slate-800">Add GitHub</button>}
-                </div>
-              </div>
-              {githubSummaryError && <p className="mt-3 text-xs text-rose-700" role="alert">{githubSummaryError}</p>}
-              {githubSummary && githubSummaryMinimized && <p className="mt-3 text-xs text-slate-500">GitHub summary is minimized. You can refresh it above.</p>}
-              {githubSummary && !githubSummaryMinimized && <div className="github-summary-details mt-4 border-t border-slate-200 pt-4">
-                <div className="flex items-center gap-3">
-                  <img src={githubSummary.avatarUrl} alt="" className="h-10 w-10 rounded-full object-cover" />
-                  <div><a href={githubSummary.profileUrl} target="_blank" rel="noreferrer" className="font-semibold text-sm text-slate-900">{githubSummary.name || githubSummary.login}</a><p className="text-xs text-slate-500">@{githubSummary.login}</p></div>
-                </div>
-                {githubSummary.bio && <p className="mt-3 text-sm text-slate-600">{githubSummary.bio}</p>}
-                <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500"><span>{githubSummary.publicRepos} public repos</span><span>{githubSummary.followers} followers</span>{githubSummary.location && <span>{githubSummary.location}</span>}</div>
-                {githubSummary.repositories?.length > 0 && <ul className="mt-3 grid gap-2 sm:grid-cols-2">{githubSummary.repositories.map((repo) => <li key={repo.url} className="rounded-lg border border-slate-200 bg-white p-3"><a href={repo.url} target="_blank" rel="noreferrer" className="text-xs font-semibold text-slate-800">{repo.name}</a><p className="mt-1 text-xs text-slate-500">{repo.description || repo.language || "Public repository"}</p></li>)}</ul>}
-              </div>}
-            </section>
+            <GitHubSummaryCard githubUrl={profileGithub} onAddGithub={() => document.getElementById("candidate-github-url")?.focus()} />
 
             {/* Profile Photo Uploader Section */}
             <div className="p-5 bg-slate-50/80 border border-slate-200 rounded-2xl space-y-3.5">
