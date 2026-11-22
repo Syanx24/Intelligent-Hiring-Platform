@@ -5,7 +5,6 @@ import {
   Briefcase,
   Check,
   ChevronRight,
-  Github,
   ListChecks,
   SlidersHorizontal,
   Sparkles,
@@ -21,7 +20,7 @@ import {
   RecruiterSearch as SearchBox,
 } from "../../components/recruiter/RecruiterControls.jsx";
 import { updateCompanyJob } from "../../service/recruiter/recruiterAPI.js";
-import { getGithubSummary } from "../../service/candidate/candidateAPI.js";
+import GitHubSummaryCard from "../../components/GitHubSummaryCard.jsx";
 import SidebarRecruiter from "../../components/recruiter/SidebarRecruiter.jsx";
 import { CiEdit } from "react-icons/ci";
 import { AiTwotoneDelete } from "react-icons/ai";
@@ -286,8 +285,6 @@ export default function RecruiterWorkspace({
   const [compare, setCompare] = useState(null);
   const [selected, setSelected] = useState([]);
   const [appliedCompare, setAppliedCompare] = useState(false);
-  const [githubSummary, setGithubSummary] = useState(null);
-  const [githubSummaryLoading, setGithubSummaryLoading] = useState(false);
   const [actionNotice, setActionNotice] = useState("");
   const [actionBusy, setActionBusy] = useState(false);
   const reload = () => {
@@ -320,12 +317,7 @@ export default function RecruiterWorkspace({
             return false;
           if (
             filters.experience &&
-            val(c.experienceYears) < Number(filters.experience)
-          )
-            return false;
-          if (
-            filters.github &&
-            (!c.githubUrl || (filters.github === "Has GitHub" && !c.githubUrl))
+            String(val(c.experienceYears)) !== filters.experience
           )
             return false;
           return true;
@@ -394,16 +386,6 @@ export default function RecruiterWorkspace({
       setError(e.message || "Could not update status.");
       setActionBusy(false);
       return false;
-    }
-  };
-  const loadGithubSummary = async (url) => {
-    setGithubSummaryLoading(true);
-    try {
-      setGithubSummary(await getGithubSummary(url));
-    } catch (e) {
-      setError(e.message || "Could not load GitHub summary.");
-    } finally {
-      setGithubSummaryLoading(false);
     }
   };
   const toggleJobStatus = async (job) => {
@@ -661,10 +643,9 @@ export default function RecruiterWorkspace({
                     },
                     {
                       key: "experience",
-                      label: "Experience at least (years)",
-                      options: ["1", "2", "3", "5"],
+                      label: "Experience (years)",
+                      options: [...new Set(apps.map((a) => String(val(a.candidateUser?.experienceYears))))].sort((a, b) => Number(a) - Number(b)),
                     },
-                    { key: "github", label: "GitHub", options: ["Has GitHub"] },
                   ]}
                   filters={filters}
                   setFilters={setFilters}
@@ -690,7 +671,6 @@ export default function RecruiterWorkspace({
                       <th>ROLE</th>
                       <th>SKILLS</th>
                       <th>EXPERIENCE</th>
-                      <th>GITHUB</th>
                       <th>STATUS</th>
                       <th>ACTION</th>
                     </tr>
@@ -702,15 +682,15 @@ export default function RecruiterWorkspace({
                         <tr key={a._id}>
                           <td>
                             <div className="rw-person">
-                              <span className="rw-avatar rw-avatar-image">
+                              <button type="button" className="rw-avatar rw-avatar-image rw-person-open" aria-label={`View ${a.name}'s profile`} onClick={() => setProfile(a)}>
                                 {c.avatarUrl ? <img src={c.avatarUrl} alt="" /> : (a.name || "?")
                                   .split(" ")
                                   .map((x) => x[0])
                                   .slice(0, 2)
                                   .join("")}
-                              </span>
+                              </button>
                               <span>
-                                <b>{a.name}</b>
+                                <button type="button" className="rw-person-name" onClick={() => setProfile(a)}>{a.name}</button>
                                 <small>{a.email}</small>
                               </span>
                             </div>
@@ -726,33 +706,10 @@ export default function RecruiterWorkspace({
                           </td>
                           <td>{val(c.experienceYears)} yrs</td>
                           <td>
-                            {c.githubUrl ? (
-                              <a
-                                className="rw-icon-link"
-                                href={c.githubUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                <Github size={16} />
-                              </a>
-                            ) : (
-                              "—"
-                            )}
-                          </td>
-                          <td>
                             <StatusPill status={a.status} />
                           </td>
                           <td>
-                            <button
-                              className="rw-link"
-                              onClick={() => {
-                                setGithubSummary(null);
-                                setProfile(a);
-                              }}
-                            >
-                              Profile
-                            </button>
-                            {a.status !== "Shortlisted" && (
+                            {!['Accepted', 'Rejected', 'Interviewing', 'Shortlisted'].includes(a.status) && (
                               <button
                                 className="rw-icon-action"
                                 title="Shortlist"
@@ -846,16 +803,10 @@ export default function RecruiterWorkspace({
                 Applied {new Date(profile.createdAt).toLocaleDateString()}
               </span>
             </div>
-            {profile.candidateUser?.githubUrl && <section className="rw-github-demo">
-              <div className="rw-github-demo-head"><div><b>GitHub Summary</b><small>Public profile information from GitHub</small></div>
-                <button className="rw-button" disabled={githubSummaryLoading} onClick={() => loadGithubSummary(profile.candidateUser.githubUrl)}>{githubSummaryLoading ? "Loading…" : "GitHub summary"}</button>
-              </div>
-              {githubSummary && <div className="rw-github-summary">
-                <div className="rw-github-summary-user">{githubSummary.avatarUrl && <img src={githubSummary.avatarUrl} alt="" />}<div><b>{githubSummary.name || githubSummary.login}</b><small>@{githubSummary.login} · {githubSummary.publicRepos} public repos · {githubSummary.followers} followers</small></div></div>
-                {githubSummary.bio && <p>{githubSummary.bio}</p>}
-                {githubSummary.repositories?.length > 0 && <ul>{githubSummary.repositories.slice(0, 3).map((repo) => <li key={repo.url}><a href={repo.url} target="_blank" rel="noreferrer">{repo.name}</a>{repo.language ? ` · ${repo.language}` : ""}{repo.stars ? ` · ★ ${repo.stars}` : ""}</li>)}</ul>}
-              </div>}
-            </section>}
+            <GitHubSummaryCard
+              key={profile.candidateUser?.githubUrl || profile.githubUrl || profile._id}
+              githubUrl={profile.candidateUser?.githubUrl || profile.githubUrl || ""}
+            />
             <div className="rw-profile-grid">
               {[
                 ["Email", profile.email],
@@ -892,39 +843,23 @@ export default function RecruiterWorkspace({
               </div>
             </div>
             <div className="rw-profile-block rw-profile-links">
-              {profile.candidateUser?.githubUrl && (
-                <a
-                  href={profile.candidateUser.githubUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <Github size={15} /> GitHub
+              {[
+                ["GitHub", profile.candidateUser?.githubUrl || profile.githubUrl],
+                ["Portfolio", profile.candidateUser?.portfolioUrl],
+                ["CV", profile.resumeUrl || profile.candidateUser?.resumeUrl],
+              ].map(([label, url]) => (
+                <a key={label} className={`rw-profile-link-card${url ? "" : " is-unavailable"}`} href={url || undefined} target={url ? "_blank" : undefined} rel={url ? "noreferrer" : undefined} aria-disabled={!url}>
+                  <b>{label}</b><span>{url ? (label === "CV" ? "Open CV" : "View profile") : "Not provided"}</span>
                 </a>
-              )}
-              {profile.candidateUser?.portfolioUrl && (
-                <a
-                  href={profile.candidateUser.portfolioUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Portfolio <ChevronRight size={14} />
-                </a>
-              )}
+              ))}
             </div>
             <div className="rw-profile-actions">
               <button
                 className="rw-button"
                 disabled={actionBusy}
-                onClick={() => changeStatus(profile, "Under review", "Candidate moved to deep review.")}
+                onClick={() => changeStatus(profile, "Under review", "Candidate moved under review.")}
               >
-                Deep check
-              </button>
-              <button
-                className="rw-button"
-                disabled={actionBusy}
-                onClick={() => changeStatus(profile, "Under review", "Candidate moved to the test stage.")}
-              >
-                Test
+                Under review
               </button>
               <button
                 className="rw-button"
@@ -934,7 +869,7 @@ export default function RecruiterWorkspace({
                 Interview
               </button>
               <button
-                className="rw-primary"
+                className="rw-button"
                 disabled={actionBusy}
                 onClick={() => changeStatus(profile, "Accepted")}
               >
@@ -1000,7 +935,6 @@ export default function RecruiterWorkspace({
                       "Applied role",
                       "Experience",
                       "Skills",
-                      "GitHub",
                     ].map((row) => (
                       <tr key={row}>
                         <th>{row}</th>
@@ -1019,14 +953,8 @@ export default function RecruiterWorkspace({
                                   `${val(c.experienceYears)} years`
                                 ) : row === "Skills" ? (
                                   skills.join(", ") || "Not listed"
-                                ) : row === "GitHub" ? (
-                                  c.githubUrl ? (
-                                    "Linked"
-                                  ) : (
-                                    "Not linked"
-                                  )
                                 ) : (
-                                  c.githubUrl ? "Linked" : "Not linked"
+                                  "—"
                                 )}
                               </td>
                             );

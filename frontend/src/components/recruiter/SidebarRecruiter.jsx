@@ -29,6 +29,12 @@ export default function SidebarRecruiter({
 }) {
   return (
     <aside className="rw-sidebar">
+      <label className="rw-mobile-nav">
+        <span>Workspace section</span>
+        <select value={section} onChange={(event) => onNavigate(event.target.value)} aria-label="Recruiter workspace section">
+          {sections.map(([name]) => <option key={name} value={name}>{name}{name === "My Jobs" ? ` (${jobs.length})` : name === "Applications" && apps.length ? ` (${apps.length})` : ""}</option>)}
+        </select>
+      </label>
       <button
         className="rw-collapse"
         onClick={onToggleCollapsed}

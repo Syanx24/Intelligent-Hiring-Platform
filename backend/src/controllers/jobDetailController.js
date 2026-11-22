@@ -23,7 +23,9 @@ export async function listJobs(req, res, next) {
       ];
     }
 
-const jobs = await JobDetail.find(filter).sort({ featured: -1, createdAt: -1 });
+const jobs = await JobDetail.find(filter)
+      .populate("companyUser", "companyWebsite")
+      .sort({ featured: -1, createdAt: -1 });
     res.json(jobs);
   } catch (error) {
     next(error);
@@ -36,7 +38,7 @@ export async function getJob(req, res, next) {
       return res.status(400).json({ message: "Invalid job ID." });
     }
 
-const job = await JobDetail.findById(req.params.id);
+const job = await JobDetail.findById(req.params.id).populate("companyUser", "companyWebsite");
     if (!job) return res.status(404).json({ message: "Job not found." });
     res.json(job);
   } catch (error) {

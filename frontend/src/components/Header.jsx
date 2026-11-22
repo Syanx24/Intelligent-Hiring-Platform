@@ -1,5 +1,6 @@
-import { ArrowRight, Briefcase, LogOut, UserRound } from "lucide-react";
+import { ArrowRight, Briefcase, LogOut, Menu, UserRound, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useState } from "react";
 
 const candidateLinks = [
   ["jobs", "Jobs"],
@@ -19,6 +20,7 @@ export default function Header({
   syncing = false,
   counts = {},
 }) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isCandidate = page === "candidate";
   const isRecruiter = page === "recruiter";
   const homeHref = user?.role === "company"
@@ -29,7 +31,7 @@ export default function Header({
 
   return (
     <header className="site-header sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
-      <div className="site-header-inner mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
+      <div className="site-header-inner relative mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
         <Link to={homeHref} className="site-brand flex shrink-0 items-center gap-2.5" aria-label="HireMe home">
           <img src={import.meta.env.VITE_APP_LOGO_URL || "/logo.svg"} alt="" className="site-brand-mark site-brand-image h-9 w-9 rounded-xl object-cover" />
           <span className="flex items-center gap-1.5 text-[17px] font-semibold tracking-tight text-slate-900">
@@ -37,7 +39,7 @@ export default function Header({
           </span>
         </Link>
 
-        <nav className={`site-header-nav items-center gap-1 ${isCandidate && user ? "flex min-w-0 flex-1 overflow-x-auto md:flex-none" : "hidden md:flex"}`} aria-label="Main navigation">
+        <nav className="site-header-nav hidden items-center gap-1 md:flex" aria-label="Main navigation">
           {isCandidate && user ? candidateLinks.map(([key, label]) => (
             <button
               key={key}
@@ -94,6 +96,38 @@ export default function Header({
             </Link>
           )}
         </div>
+        {!isRecruiter && (
+          <div className="relative md:hidden">
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((open) => !open)}
+              aria-expanded={mobileMenuOpen}
+              aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+            >
+              {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+            </button>
+            {mobileMenuOpen && (
+              <nav className="absolute right-0 top-[calc(100%+12px)] z-50 grid min-w-48 gap-1 rounded-xl border border-slate-200 bg-white p-2 shadow-xl" aria-label="Mobile navigation">
+                {isCandidate && user ? candidateLinks.map(([key, label]) => (
+                  <button key={key} type="button" onClick={() => { onTabChange?.(key); setMobileMenuOpen(false); }} className={`flex items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-medium ${activeTab === key ? "bg-blue-50 text-blue-700" : "text-slate-700 hover:bg-slate-50"}`}>
+                    {label}{Number.isFinite(counts[key]) && <span className="text-xs text-slate-500">{counts[key]}</span>}
+                  </button>
+                )) : (
+                  <>
+                    <Link to="/#catalog" onClick={() => setMobileMenuOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Explore roles</Link>
+                    {page === "home" && <>
+                      <Link to="/#comparison" onClick={() => setMobileMenuOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Why HireMe</Link>
+                      <Link to="/#roadmap" onClick={() => setMobileMenuOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Roadmap</Link>
+                    </>}
+                    <Link to="/about" onClick={() => setMobileMenuOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">About us</Link>
+                    {!user && onOpenAuth && <button type="button" onClick={() => { onOpenAuth("company"); setMobileMenuOpen(false); }} className="rounded-lg px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50">For recruiters</button>}
+                  </>
+                )}
+              </nav>
+            )}
+          </div>
+        )}
       </div>
     </header>
   );

@@ -146,7 +146,7 @@ export async function login(req, res, next) {
     }
 
     if (typeof password !== "string" || !(await bcrypt.compare(password, account.password))) {
-      return res.status(401).json({ message: "Wrong password." });
+      return res.status(401).json({ message: "Wrong Credential." });
     }
 
     return res.json({

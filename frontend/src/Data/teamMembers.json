@@ -1,30 +1,50 @@
-
 [
   {
     "id": 1,
-    "name": "Name 1",
-    "role": "Web Developer",
-    "image": "/images/profile1.jpg",
-    "linkedin": "https://linkedin.com/",
-    "instagram": "https://instagram.com/",
-    "facebook": "https://facebook.com/"
+    "name": "Debasish Dhara",
+    "role": "Researcher",
+    "linkedin": "https://www.linkedin.com/in/debasis-dhara-618996289?utm_source=share_via&utm_content=profile&utm_medium=member_android",
+    "instagram": "https://www.instagram.com/deba_sishdhara?knvt=cDFkMHkxMDdpenp5",
+    "github": "https://github.com/debasis81"
   },
   {
     "id": 2,
-    "name": "Name 2",
-    "role": "UI/UX Designer",
-    "image": "/images/profile2.jpg",
-    "linkedin": "https://linkedin.com/",
-    "instagram": "https://instagram.com/",
-    "facebook": "https://facebook.com/"
+    "name": "Tanmay Dutta",
+    "role": "Tester 1",
+    "linkedin": "https://www.linkedin.com/in/tanmay-dutta-8807382a2?utm_source=share_via&utm_content=profile&utm_medium=member_android",
+    "instagram": "https://www.instagram.com/viratian_a.j.angshu_18?dmpr=MW9leW14bzJkZDU0OA==",
+    "github": "https://github.com/Tnmay18"
   },
   {
     "id": 3,
-    "name": "Name 3",
-    "role": "Frontend Developer",
-    "image": "/images/profile3.jpg",
-    "linkedin": "https://linkedin.com/",
-    "instagram": "https://instagram.com/",
-    "facebook": "https://facebook.com/"
+    "name": "Anish Basak",
+    "role": "Tester 2",
+    "linkedin": "https://www.linkedin.com/in/anish-basak-82547b381?utm_source=share_via&utm_content=profile&utm_medium=member_android",
+    "instagram": "https://www.instagram.com",
+    "github": "https://github.com/ANISHBASAK3010"
+  },
+  {
+    "id": 4,
+    "name": "Rajaul Rahaman Lasker",
+    "role": "Report & Analysis",
+    "linkedin": "https://www.linkedin.com/in/rajaul-rahaman-laskar-78a125397?utm_source=share_via&utm_content=profile&utm_medium=member_android",
+    "instagram": "https://www.instagram.com",
+    "github": "https://github.com/RRLaskar"
+  },
+  {
+    "id": 5,
+    "name": "Sayan Bhattacharjee",
+    "role": "Web developer 1",
+    "linkedin": "https://www.linkedin.com/in/sayanbhattacharjee24/",
+    "instagram": "https://www.instagram.com/syanx24/?hl=en",
+    "github": "https://github.com/Syanx24"
+  },
+  {
+    "id": 6,
+    "name": "Bikram Samanta",
+    "role": "Web developer 2",
+    "linkedin": "https://www.linkedin.com/in/bikram-samanta-b82232281",
+    "instagram": "https://www.instagram.com",
+    "github": "https://github.com/tech-lab-BI"
   }
 ]

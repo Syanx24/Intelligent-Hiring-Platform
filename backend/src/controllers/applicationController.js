@@ -109,7 +109,11 @@ export async function getMyApplications(req, res, next) {
     };
 
     const applications = await Application.find(query)
-      .populate("job", "title company companyColor companyInitials location workplace salary type category")
+      .populate({
+        path: "job",
+        select: "title company companyColor companyInitials location workplace salary type category createdAt companyUser",
+        populate: { path: "companyUser", select: "companyWebsite" },
+      })
       .sort({ createdAt: -1 });
 
     res.json(applications);
@@ -156,7 +160,7 @@ export async function getCompanyApplications(req, res, next) {
     const jobs = await JobDetail.find({ companyUser: req.user._id }).select("_id title category");
     const applicationRecords = await Application.find({ job: { $in: jobs.map((job) => job._id) } })
       .populate("job", "title company location workplace category type")
-      .populate("candidateUser", "name avatarUrl headline githubUrl portfolioUrl skills bio experienceYears location")
+      .populate("candidateUser", "name avatarUrl headline githubUrl portfolioUrl resumeUrl skills bio experienceYears location")
       .sort({ createdAt: -1 });
     const applications = applicationRecords.map((application) => application.toObject());
     res.json(applications);

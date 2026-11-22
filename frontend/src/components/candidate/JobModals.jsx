@@ -52,6 +52,16 @@ export function JobDetailsModal({ job, onClose, onApply, alreadyApplied = false 
 
         {/* Description */}
         <div className="modal-body-content">
+          {job.companyUser?.companyWebsite && (
+            <a
+              href={job.companyUser.companyWebsite}
+              target="_blank"
+              rel="noreferrer"
+              className="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700 hover:text-emerald-800"
+            >
+              Visit company website <ArrowRight size={14} />
+            </a>
+          )}
           <h4 className="modal-section-title">About the Role</h4>
           <p className="modal-desc-text">{job.description}</p>
 
